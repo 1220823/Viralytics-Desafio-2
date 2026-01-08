@@ -21,7 +21,7 @@
 /build
 
 # misc
-*.DS_Store
+.DS_Store
 *.pem
 
 # debug
@@ -40,5 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# agents
-/agents/
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
