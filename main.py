@@ -155,13 +155,11 @@ async def optimize_marketing_allocation(request: OptimizationRequest):
 def predict_campaign_overcosts(campaigns: List[Campaign]) -> List[Campaign]:
     """Generates random overcost values for a list of campaigns."""
     for campaign in campaigns:
-        # Generate random number between -7000 and 7000, rounded to 4 decimal places
         campaign.overcost = round(random.uniform(-7000.0, 7000.0), 4)
     return campaigns
 
 def predict_ads_conversion_rates(ads: List[Ad]) -> List[Ad]:
     """Generates random conversion rates for a list of ads."""
     for ad in ads:
-        # Generate random number between 0.01 and 0.15, rounded to 4 decimal places
-        ad.conversion_rate = round(random.uniform(0.01, 0.15), 4)
+        ad.conversion_rate = round(random.uniform(0.1, 0.4), 4)
     return ads
