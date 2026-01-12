@@ -65,7 +65,7 @@ export interface OptimizationResponse {
 export const DEFAULT_CAMPAIGN: Omit<Campaign, 'id'> = {
   name: '',
   no_of_days: 30,
-  time: new Date().toISOString().split('T')[0],
+  time: '2026-01-01',
   approved_budget: 5000,
   impressions: 0,
   clicks: 0,
@@ -81,7 +81,7 @@ export const DEFAULT_AD: Omit<Ad, 'id'> = {
   view_time: 30,
   cost_per_click: 2.50,
   roi: 0,
-  timestamp: new Date().toISOString(),
+  timestamp: '2026-01-01T00:00:00.000Z',
   age_group: '25-34',
   engagement_level: 'Liked',
   device_type: 'Desktop',

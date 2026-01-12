@@ -6,6 +6,7 @@ import AdCard from "./AdCard";
 interface AdSectionProps {
   ads: Ad[];
   onAdd: () => void;
+  onLoad: () => void;
   onRemove: (id: number) => void;
   onUpdate: (id: number, updates: Partial<Ad>) => void;
 }
@@ -13,6 +14,7 @@ interface AdSectionProps {
 export default function AdSection({
   ads,
   onAdd,
+  onLoad,
   onRemove,
   onUpdate,
 }: AdSectionProps) {
@@ -45,14 +47,24 @@ export default function AdSection({
         />
       ))}
 
-      <button
-        type="button"
-        onClick={onAdd}
-        className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-[#4A90A4] hover:text-[#4A90A4] hover:bg-slate-50 transition-all font-semibold text-sm flex items-center justify-center gap-2"
-      >
-        <span className="material-symbols-outlined">add_circle</span>
-        Add Another Ad
-      </button>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex-1 py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-[#4A90A4] hover:text-[#4A90A4] hover:bg-slate-50 transition-all font-semibold text-sm flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined">add_circle</span>
+          Add Another Ad
+        </button>
+        <button
+          type="button"
+          onClick={onLoad}
+          className="flex-1 py-3 border-2 border-slate-300 rounded-xl text-slate-500 hover:border-[#4A90A4] hover:text-[#4A90A4] hover:bg-slate-50 transition-all font-semibold text-sm flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined">download</span>
+          Load Ad
+        </button>
+      </div>
     </section>
   );
 }

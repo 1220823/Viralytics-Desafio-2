@@ -33,17 +33,7 @@ export default function AdCard({
   const [open, setOpen] = useState(isOpen);
 
   const getDisplayName = () => {
-    const parts = [];
-    if (ad.device_type) {
-      parts.push(ad.device_type);
-    }
-    if (ad.ad_target_audience) {
-      parts.push(ad.ad_target_audience);
-    }
-    if (ad.content_type) {
-      parts.push(ad.content_type);
-    }
-    return parts.length > 1 ? parts.join(" - ") : `Ad ${label}`;
+    return ad.name || `Ad ${label}`;
   };
 
   return (
@@ -86,6 +76,20 @@ export default function AdCard({
 
       <div className="p-6 border-t border-slate-100">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Ad Name */}
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Ad Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={ad.name}
+              onChange={(e) => onUpdate({ name: e.target.value })}
+              placeholder="Enter ad name"
+              className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
+            />
+          </div>
+
           {/* Device Type & Location */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>

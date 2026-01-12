@@ -28,10 +28,7 @@ export default function CampaignCard({
   const [open, setOpen] = useState(isOpen);
 
   const getDisplayName = () => {
-    if (campaign.ext_service_name) {
-      return campaign.ext_service_name;
-    }
-    return `Campaign ${index}`;
+    return campaign.name || `Campaign ${index}`;
   };
 
   return (
@@ -74,6 +71,20 @@ export default function CampaignCard({
 
       <div className="p-6 border-t border-slate-100">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Campaign Name */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Campaign Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={campaign.name}
+              onChange={(e) => onUpdate({ name: e.target.value })}
+              placeholder="Enter campaign name"
+              className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 px-3"
+            />
+          </div>
+
           {/* Service Name */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">

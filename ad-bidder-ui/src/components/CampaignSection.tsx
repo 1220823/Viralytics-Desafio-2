@@ -6,6 +6,7 @@ import CampaignCard from "./CampaignCard";
 interface CampaignSectionProps {
   campaigns: Campaign[];
   onAdd: () => void;
+  onLoad: () => void;
   onRemove: (id: number) => void;
   onUpdate: (id: number, updates: Partial<Campaign>) => void;
 }
@@ -13,6 +14,7 @@ interface CampaignSectionProps {
 export default function CampaignSection({
   campaigns,
   onAdd,
+  onLoad,
   onRemove,
   onUpdate,
 }: CampaignSectionProps) {
@@ -40,14 +42,24 @@ export default function CampaignSection({
         />
       ))}
 
-      <button
-        type="button"
-        onClick={onAdd}
-        className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-[#1d3d5d] hover:text-[#1d3d5d] hover:bg-slate-50 transition-all font-semibold text-sm flex items-center justify-center gap-2"
-      >
-        <span className="material-symbols-outlined">add_circle</span>
-        Add Another Campaign
-      </button>
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex-1 py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:border-[#1d3d5d] hover:text-[#1d3d5d] hover:bg-slate-50 transition-all font-semibold text-sm flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined">add_circle</span>
+          Add Another Campaign
+        </button>
+        <button
+          type="button"
+          onClick={onLoad}
+          className="flex-1 py-3 border-2 border-slate-300 rounded-xl text-slate-500 hover:border-[#1d3d5d] hover:text-[#1d3d5d] hover:bg-slate-50 transition-all font-semibold text-sm flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined">download</span>
+          Load Campaign
+        </button>
+      </div>
     </section>
   );
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import CampaignSection from "@/components/CampaignSection";
 import AdSection from "@/components/AdSection";
+import LoadModal from "@/components/LoadModal";
 import { Campaign, Ad, DEFAULT_CAMPAIGN, DEFAULT_AD, OptimizationResponse } from "@/types";
 
 let nextCampaignId = 1;
@@ -19,17 +20,40 @@ function generateAdId() {
 
 export default function Home() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([
-    { ...DEFAULT_CAMPAIGN, id: generateCampaignId(), name: "Campaign 1" },
+    {
+      ...DEFAULT_CAMPAIGN,
+      id: generateCampaignId(),
+      name: "Campaign 1",
+      time: new Date().toISOString().split('T')[0]
+    },
   ]);
   const [ads, setAds] = useState<Ad[]>([
-    { ...DEFAULT_AD, id: generateAdId(), name: "Ad 1" },
+    {
+      ...DEFAULT_AD,
+      id: generateAdId(),
+      name: "Ad 1",
+      timestamp: new Date().toISOString()
+    },
   ]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [results, setResults] = useState<OptimizationResponse | null>(null);
 
+  // Load modal state
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [loadedCampaigns, setLoadedCampaigns] = useState<Campaign[]>([]);
+  const [loadedAds, setLoadedAds] = useState<Ad[]>([]);
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
+  const [isLoadingAds, setIsLoadingAds] = useState(false);
+
   const addCampaign = () => {
     const newId = generateCampaignId();
-    setCampaigns([...campaigns, { ...DEFAULT_CAMPAIGN, id: newId, name: `Campaign ${newId}` }]);
+    setCampaigns([...campaigns, {
+      ...DEFAULT_CAMPAIGN,
+      id: newId,
+      name: `Campaign ${newId}`,
+      time: new Date().toISOString().split('T')[0]
+    }]);
   };
 
   const removeCampaign = (id: number) => {
@@ -46,7 +70,12 @@ export default function Home() {
 
   const addAd = () => {
     const newId = generateAdId();
-    setAds([...ads, { ...DEFAULT_AD, id: newId, name: `Ad ${newId}` }]);
+    setAds([...ads, {
+      ...DEFAULT_AD,
+      id: newId,
+      name: `Ad ${newId}`,
+      timestamp: new Date().toISOString()
+    }]);
   };
 
   const removeAd = (id: number) => {
@@ -77,6 +106,50 @@ export default function Home() {
     } catch (error) {
       console.error("Data fetch failed:", error);
     }
+  };
+
+  const openLoadCampaignModal = async () => {
+    setShowCampaignModal(true);
+    setIsLoadingCampaigns(true);
+    try {
+      const response = await fetch("http://localhost:8000/campaigns");
+      const data = await response.json();
+      setLoadedCampaigns(data);
+    } catch (error) {
+      console.error("Failed to load campaigns:", error);
+      setLoadedCampaigns([]);
+    } finally {
+      setIsLoadingCampaigns(false);
+    }
+  };
+
+  const openLoadAdModal = async () => {
+    setShowAdModal(true);
+    setIsLoadingAds(true);
+    try {
+      const response = await fetch("http://localhost:8000/ads");
+      const data = await response.json();
+      setLoadedAds(data);
+    } catch (error) {
+      console.error("Failed to load ads:", error);
+      setLoadedAds([]);
+    } finally {
+      setIsLoadingAds(false);
+    }
+  };
+
+  const handleSelectCampaign = (item: Campaign | Ad) => {
+    const campaign = item as Campaign;
+    const newId = generateCampaignId();
+    setCampaigns([...campaigns, { ...campaign, id: newId }]);
+    setShowCampaignModal(false);
+  };
+
+  const handleSelectAd = (item: Campaign | Ad) => {
+    const ad = item as Ad;
+    const newId = generateAdId();
+    setAds([...ads, { ...ad, id: newId }]);
+    setShowAdModal(false);
   };
 
   const handleOptimize = async () => {
@@ -133,18 +206,13 @@ export default function Home() {
               Configure your parameters to generate optimized bidding strategies.
             </p>
           </div>
-          <div className="flex gap-3">
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors">
-              <span className="material-symbols-outlined text-[20px]">history</span>
-              Load Preset
-            </button>
-          </div>
         </div>
 
         {/* Campaign Section */}
         <CampaignSection
           campaigns={campaigns}
           onAdd={addCampaign}
+          onLoad={openLoadCampaignModal}
           onRemove={removeCampaign}
           onUpdate={updateCampaign}
         />
@@ -156,6 +224,7 @@ export default function Home() {
         <AdSection
           ads={ads}
           onAdd={addAd}
+          onLoad={openLoadAdModal}
           onRemove={removeAd}
           onUpdate={updateAd}
         />
@@ -214,6 +283,27 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {/* Load Modals */}
+      <LoadModal
+        isOpen={showCampaignModal}
+        onClose={() => setShowCampaignModal(false)}
+        title="Load Campaign from Database"
+        items={loadedCampaigns}
+        type="campaign"
+        onSelect={handleSelectCampaign}
+        isLoading={isLoadingCampaigns}
+      />
+
+      <LoadModal
+        isOpen={showAdModal}
+        onClose={() => setShowAdModal(false)}
+        title="Load Ad from Database"
+        items={loadedAds}
+        type="ad"
+        onSelect={handleSelectAd}
+        isLoading={isLoadingAds}
+      />
     </div>
   );
 }
