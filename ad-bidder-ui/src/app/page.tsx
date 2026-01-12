@@ -46,6 +46,19 @@ export default function Home() {
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
   const [isLoadingAds, setIsLoadingAds] = useState(false);
 
+  // Advanced parameters state
+  const [populationSize, setPopulationSize] = useState(100);
+  const [maxGenerations, setMaxGenerations] = useState(150);
+  const [mutationRate, setMutationRate] = useState(0.15);
+  const [crossoverRate, setCrossoverRate] = useState(0.85);
+  const [riskFactor, setRiskFactor] = useState(1.0);
+  const [totalBudgetOverride, setTotalBudgetOverride] = useState<number | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // Calculate minimum budget from campaigns
+  const minBudget = campaigns.reduce((sum, c) => sum + c.approved_budget, 0);
+  const effectiveBudget = totalBudgetOverride !== null ? totalBudgetOverride : minBudget;
+
   const addCampaign = () => {
     const newId = generateCampaignId();
     setCampaigns([...campaigns, {
@@ -156,17 +169,15 @@ export default function Home() {
     setIsOptimizing(true);
     setResults(null);
 
-    const totalBudget = campaigns.reduce((sum, c) => sum + c.approved_budget, 0);
-
     const requestPayload = {
       campaigns: campaigns,
       ads: ads,
-      total_budget: totalBudget,
-      population_size: 100,
-      max_generations: 150,
-      mutation_rate: 0.15,
-      crossover_rate: 0.85,
-      risk_factor: 1.0,
+      total_budget: effectiveBudget,
+      population_size: populationSize,
+      max_generations: maxGenerations,
+      mutation_rate: mutationRate,
+      crossover_rate: crossoverRate,
+      risk_factor: riskFactor,
       ga_verbose: false,
     };
 
@@ -174,7 +185,7 @@ export default function Home() {
     console.log("Endpoint: POST /optimize_marketing_allocation");
     console.log("Campaigns:", campaigns.length);
     console.log("Ads:", ads.length);
-    console.log("Total Budget:", totalBudget);
+    console.log("Total Budget:", effectiveBudget);
     console.log("Full Request Payload:", requestPayload);
 
     try {
@@ -248,6 +259,158 @@ export default function Home() {
           onRemove={removeAd}
           onUpdate={updateAd}
         />
+
+        {/* Divider */}
+        <div className="border-t border-slate-200 my-8"></div>
+
+        {/* Advanced Parameters Section */}
+        <section className="space-y-4">
+          <details
+            className="group bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+            open={advancedOpen}
+            onToggle={(e) => setAdvancedOpen((e.target as HTMLDetailsElement).open)}
+          >
+            <summary className="px-6 py-4 cursor-pointer flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors select-none">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-[#6B7280]">tune</span>
+                <span className="font-bold text-slate-800">Advanced Parameters</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium px-2 py-1 rounded bg-slate-100 text-slate-500">
+                  GA Settings
+                </span>
+                <span className="material-symbols-outlined text-slate-400 transform group-open:rotate-180 transition-transform duration-200">
+                  expand_more
+                </span>
+              </div>
+            </summary>
+
+            <div className="p-6 border-t border-slate-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Total Budget */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Total Budget
+                  </label>
+                  <div className="relative rounded-md">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                      <span className="text-slate-500 sm:text-sm">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={minBudget}
+                      value={totalBudgetOverride !== null ? totalBudgetOverride : minBudget}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        setTotalBudgetOverride(value < minBudget ? minBudget : value);
+                      }}
+                      className={`block w-full rounded-lg border pl-7 pr-12 sm:text-sm h-11 bg-white ${
+                        totalBudgetOverride !== null && totalBudgetOverride < minBudget
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                          : 'border-slate-200 focus:border-[#1d3d5d] focus:ring-[#1d3d5d]'
+                      }`}
+                    />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span className="text-slate-500 sm:text-sm">USD</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Minimum: ${minBudget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (sum of campaign budgets)
+                  </p>
+                </div>
+
+                {/* Population Size */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Population Size
+                  </label>
+                  <input
+                    type="number"
+                    value={populationSize}
+                    onChange={(e) => setPopulationSize(parseInt(e.target.value) || 0)}
+                    className="block w-full rounded-lg border border-slate-200 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 bg-white px-3"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Number of solutions per generation</p>
+                </div>
+
+                {/* Max Generations */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Max Generations
+                  </label>
+                  <input
+                    type="number"
+                    value={maxGenerations}
+                    onChange={(e) => setMaxGenerations(parseInt(e.target.value) || 0)}
+                    className="block w-full rounded-lg border border-slate-200 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 bg-white px-3"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Maximum iterations for the algorithm</p>
+                </div>
+
+                {/* Mutation Rate Slider */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Mutation Rate: {mutationRate.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={mutationRate}
+                    onChange={(e) => setMutationRate(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#1d3d5d]"
+                  />
+                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                    <span>0</span>
+                    <span>1</span>
+                  </div>
+                </div>
+
+                {/* Crossover Rate Slider */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Crossover Rate: {crossoverRate.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={crossoverRate}
+                    onChange={(e) => setCrossoverRate(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#1d3d5d]"
+                  />
+                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                    <span>0</span>
+                    <span>1</span>
+                  </div>
+                </div>
+
+                {/* Risk Factor Slider */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Risk Factor: {riskFactor.toFixed(1)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value={riskFactor}
+                    onChange={(e) => setRiskFactor(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#1d3d5d]"
+                  />
+                  <div className="flex justify-between text-xs text-slate-500 mt-1">
+                    <span>High Risk</span>
+                    <span>Low Risk</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+        </section>
 
         {/* Optimize Button */}
         <div className="flex justify-center pt-8">
