@@ -4,7 +4,7 @@ import random
 from copy import deepcopy
 from typing import List, Dict, Tuple, Optional
 
-from models import Campaign, Ad 
+from Classes.models import Campaign, Ad 
 
 from pydantic.dataclasses import dataclass
 from dataclasses import field   
