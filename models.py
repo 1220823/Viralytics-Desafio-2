@@ -54,8 +54,8 @@ class OptimizationRequest:
     ads: List[Ad]
     total_budget: float
     population_size: int = 100
-    max_generations: int = 150
+    max_generations: int = 250
     mutation_rate: float = 0.15
     crossover_rate: float = 0.85
-    ideal_roi: float = 0.0
+    risk_factor: float = 0.0
     ga_verbose: bool = True

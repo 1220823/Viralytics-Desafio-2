@@ -103,10 +103,10 @@ class FitnessEvaluator:
     def __init__(self, 
                  data_manager: DataManager,
                  total_budget: float,
-                 ideal_roi: float = 0.0):
+                 risk_factor: float = 0.0):
         self.data_manager = data_manager
         self.total_budget = total_budget
-        self.ideal_roi = ideal_roi 
+        self.risk_factor = risk_factor 
     
     def evaluate(self, individual: Individual) -> float:
         """
@@ -202,12 +202,13 @@ class FitnessEvaluator:
         campaign_roi_values = [metrics['roi'] for metrics in campaign_metrics.values()]
         avg_campaign_roi = np.mean(campaign_roi_values) if campaign_roi_values else 0.0
         
+        
         # Balance penalty: penalize uneven distribution of ads
         allocation_sizes = [len(ad_ids) for ad_ids in individual.allocation.values()]
         if len(allocation_sizes) > 1:
             std_dev = np.std(allocation_sizes)
             mean_size = np.mean(allocation_sizes)
-            balance_penalty = -1.5 * (std_dev / mean_size if mean_size > 0 else 0)
+            balance_penalty = - self.risk_factor * (std_dev / mean_size if mean_size > 0 else 0)
         else:
             balance_penalty = 0.0
         
@@ -218,11 +219,13 @@ class FitnessEvaluator:
             budget_penalty = -10.0 * excess_ratio
         
         # Budget bonus also based on full budget constraint
-        budget_usage = total_cost / self.total_budget if self.total_budget > 0 else 0
-        if budget_usage > 0.85 and budget_usage <= 1.0:
-            budget_bonus = 0.5 * budget_usage
-        else:
-            budget_bonus = 0.0
+        #budget_usage = total_cost / self.total_budget if self.total_budget > 0 else 0
+        #if budget_usage > 0.85 and budget_usage <= 1.0:
+            #budget_bonus = 0.5 * budget_usage
+       # else:
+            #budget_bonus = 0.0
+
+        budget_bonus = 0.0
         
         # Combined fitness: 70% total ROI + 30% average campaign ROI + balance penalty
         fitness = (0.7 * total_roi + 0.3 * avg_campaign_roi + 
@@ -727,7 +730,7 @@ def run_genetic_optimization(
     mutation_rate: float,
     crossover_rate: float,
     total_budget: float,
-    ideal_roi: float,
+    risk_factor: float,
     verbose: bool = True
 ) -> Optional[Individual]:
     """
@@ -749,7 +752,7 @@ def run_genetic_optimization(
     fitness_evaluator = FitnessEvaluator(
         data_manager=data_manager,
         total_budget=total_budget,
-        ideal_roi=ideal_roi
+        risk_factor=risk_factor
     )
     
     ga = GeneticAlgorithm(

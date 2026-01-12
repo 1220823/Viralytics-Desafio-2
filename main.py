@@ -140,7 +140,7 @@ async def optimize_marketing_allocation(request: OptimizationRequest):
         mutation_rate=request.mutation_rate,
         crossover_rate=request.crossover_rate,
         total_budget=request.total_budget,
-        ideal_roi=request.ideal_roi,
+        risk_factor=request.risk_factor,
         verbose=request.ga_verbose 
     )
     except ValueError as e:
