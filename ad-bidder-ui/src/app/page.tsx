@@ -166,7 +166,7 @@ export default function Home() {
       max_generations: 150,
       mutation_rate: 0.15,
       crossover_rate: 0.85,
-      ideal_roi: 0.0,
+      risk_factor: 1.0,
       ga_verbose: false,
     };
 

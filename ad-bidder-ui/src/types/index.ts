@@ -42,7 +42,7 @@ export interface OptimizationRequest {
   max_generations?: number;
   mutation_rate?: number;
   crossover_rate?: number;
-  ideal_roi?: number;
+  risk_factor?: number; // Value between 0-2
   ga_verbose?: boolean;
 }
 
