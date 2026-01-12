@@ -6,8 +6,8 @@ import CampaignCard from "./CampaignCard";
 interface CampaignSectionProps {
   campaigns: Campaign[];
   onAdd: () => void;
-  onRemove: (id: string) => void;
-  onUpdate: (id: string, updates: Partial<Campaign>) => void;
+  onRemove: (id: number) => void;
+  onUpdate: (id: number, updates: Partial<Campaign>) => void;
 }
 
 export default function CampaignSection({

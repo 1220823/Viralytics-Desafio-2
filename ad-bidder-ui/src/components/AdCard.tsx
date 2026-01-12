@@ -8,6 +8,9 @@ import {
   AGE_OPTIONS,
   GENDER_OPTIONS,
   CONTENT_TYPE_OPTIONS,
+  AD_TOPIC_OPTIONS,
+  TARGET_AUDIENCE_OPTIONS,
+  ENGAGEMENT_LEVEL_OPTIONS,
 } from "@/types";
 
 interface AdCardProps {
@@ -31,16 +34,14 @@ export default function AdCard({
 
   const getDisplayName = () => {
     const parts = [];
-    if (ad.deviceType && ad.deviceType !== "All Devices") {
-      parts.push(ad.deviceType.replace(" Only", ""));
-    } else {
-      parts.push("All Devices");
+    if (ad.device_type) {
+      parts.push(ad.device_type);
     }
-    if (ad.targetAudience) {
-      parts.push(ad.targetAudience);
+    if (ad.ad_target_audience) {
+      parts.push(ad.ad_target_audience);
     }
-    if (ad.contentType) {
-      parts.push(ad.contentType.replace(" Ad", ""));
+    if (ad.content_type) {
+      parts.push(ad.content_type);
     }
     return parts.length > 1 ? parts.join(" - ") : `Ad ${label}`;
   };
@@ -92,8 +93,8 @@ export default function AdCard({
                 Device Type <span className="text-red-500">*</span>
               </label>
               <select
-                value={ad.deviceType}
-                onChange={(e) => onUpdate({ deviceType: e.target.value })}
+                value={ad.device_type}
+                onChange={(e) => onUpdate({ device_type: e.target.value as Ad['device_type'] })}
                 className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
               >
                 {DEVICE_OPTIONS.map((opt) => (
@@ -110,7 +111,7 @@ export default function AdCard({
               </label>
               <select
                 value={ad.location}
-                onChange={(e) => onUpdate({ location: e.target.value })}
+                onChange={(e) => onUpdate({ location: e.target.value as Ad['location'] })}
                 className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
               >
                 {LOCATION_OPTIONS.map((opt) => (
@@ -129,8 +130,8 @@ export default function AdCard({
                 Age Group <span className="text-red-500">*</span>
               </label>
               <select
-                value={ad.ageGroup}
-                onChange={(e) => onUpdate({ ageGroup: e.target.value })}
+                value={ad.age_group}
+                onChange={(e) => onUpdate({ age_group: e.target.value as Ad['age_group'] })}
                 className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
               >
                 {AGE_OPTIONS.map((opt) => (
@@ -147,7 +148,7 @@ export default function AdCard({
               </label>
               <select
                 value={ad.gender}
-                onChange={(e) => onUpdate({ gender: e.target.value })}
+                onChange={(e) => onUpdate({ gender: e.target.value as Ad['gender'] })}
                 className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
               >
                 {GENDER_OPTIONS.map((opt) => (
@@ -159,56 +160,114 @@ export default function AdCard({
             </div>
           </div>
 
-          {/* Content Type */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Content Type <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={ad.contentType}
-              onChange={(e) => onUpdate({ contentType: e.target.value })}
-              className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
-            >
-              {CONTENT_TYPE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
+          {/* Content Type & Engagement Level */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Content Type <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={ad.content_type}
+                onChange={(e) => onUpdate({ content_type: e.target.value as Ad['content_type'] })}
+                className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
+              >
+                {CONTENT_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Engagement Level <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={ad.engagement_level}
+                onChange={(e) => onUpdate({ engagement_level: e.target.value as Ad['engagement_level'] })}
+                className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
+              >
+                {ENGAGEMENT_LEVEL_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Ad Topic */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Ad Topic <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={ad.adTopic}
-              onChange={(e) => onUpdate({ adTopic: e.target.value })}
-              placeholder="e.g., CRM Software for Enterprise"
-              className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
-            />
-          </div>
+          {/* Ad Topic & Target Audience */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Ad Topic <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={ad.ad_topic}
+                onChange={(e) => onUpdate({ ad_topic: e.target.value as Ad['ad_topic'] })}
+                className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
+              >
+                {AD_TOPIC_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Target Audience & Cost Per Click */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 lg:col-span-2">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Target Audience <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={ad.targetAudience}
-                onChange={(e) => onUpdate({ targetAudience: e.target.value })}
-                placeholder="e.g., IT Managers, CTOs"
+              <select
+                value={ad.ad_target_audience}
+                onChange={(e) => onUpdate({ ad_target_audience: e.target.value as Ad['ad_target_audience'] })}
                 className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 px-3"
+              >
+                {TARGET_AUDIENCE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Performance Metrics Row */}
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-4 gap-5 pt-2 border-t border-slate-100">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Click Through Rate
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={ad.click_through_rate}
+                onChange={(e) =>
+                  onUpdate({ click_through_rate: parseFloat(e.target.value) || 0 })
+                }
+                className="block w-full rounded-lg border border-slate-200 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 bg-white px-3"
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Cost Per Click (Max) <span className="text-red-500">*</span>
+                View Time (sec)
+              </label>
+              <input
+                type="number"
+                value={ad.view_time}
+                onChange={(e) =>
+                  onUpdate({ view_time: parseInt(e.target.value) || 0 })
+                }
+                className="block w-full rounded-lg border border-slate-200 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 bg-white px-3"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Cost Per Click
               </label>
               <div className="relative rounded-md">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -217,13 +276,28 @@ export default function AdCard({
                 <input
                   type="number"
                   step="0.01"
-                  value={ad.costPerClick}
+                  value={ad.cost_per_click}
                   onChange={(e) =>
-                    onUpdate({ costPerClick: parseFloat(e.target.value) || 0 })
+                    onUpdate({ cost_per_click: parseFloat(e.target.value) || 0 })
                   }
                   className="block w-full rounded-lg border border-slate-200 pl-7 pr-4 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 bg-white"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                ROI
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={ad.roi}
+                onChange={(e) =>
+                  onUpdate({ roi: parseFloat(e.target.value) || 0 })
+                }
+                className="block w-full rounded-lg border border-slate-200 focus:border-[#4A90A4] focus:ring-[#4A90A4] sm:text-sm h-11 bg-white px-3"
+              />
             </div>
           </div>
         </div>

@@ -4,112 +4,117 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import CampaignSection from "@/components/CampaignSection";
 import AdSection from "@/components/AdSection";
-import { Campaign, Ad, DEFAULT_CAMPAIGN, DEFAULT_AD } from "@/types";
+import { Campaign, Ad, DEFAULT_CAMPAIGN, DEFAULT_AD, OptimizationResponse } from "@/types";
 
-function generateId() {
-  return Math.random().toString(36).substring(2, 9);
+let nextCampaignId = 1;
+let nextAdId = 1;
+
+function generateCampaignId() {
+  return nextCampaignId++;
+}
+
+function generateAdId() {
+  return nextAdId++;
 }
 
 export default function Home() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([
-    { ...DEFAULT_CAMPAIGN, id: generateId() },
+    { ...DEFAULT_CAMPAIGN, id: generateCampaignId(), name: "Campaign 1" },
   ]);
   const [ads, setAds] = useState<Ad[]>([
-    { ...DEFAULT_AD, id: generateId() },
+    { ...DEFAULT_AD, id: generateAdId(), name: "Ad 1" },
   ]);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [results, setResults] = useState<OptimizationResponse | null>(null);
 
   const addCampaign = () => {
-    setCampaigns([...campaigns, { ...DEFAULT_CAMPAIGN, id: generateId() }]);
+    const newId = generateCampaignId();
+    setCampaigns([...campaigns, { ...DEFAULT_CAMPAIGN, id: newId, name: `Campaign ${newId}` }]);
   };
 
-  const removeCampaign = (id: string) => {
+  const removeCampaign = (id: number) => {
     if (campaigns.length > 1) {
       setCampaigns(campaigns.filter((c) => c.id !== id));
     }
   };
 
-  const updateCampaign = (id: string, updates: Partial<Campaign>) => {
+  const updateCampaign = (id: number, updates: Partial<Campaign>) => {
     setCampaigns(
       campaigns.map((c) => (c.id === id ? { ...c, ...updates } : c))
     );
   };
 
   const addAd = () => {
-    setAds([...ads, { ...DEFAULT_AD, id: generateId() }]);
+    const newId = generateAdId();
+    setAds([...ads, { ...DEFAULT_AD, id: newId, name: `Ad ${newId}` }]);
   };
 
-  const removeAd = (id: string) => {
+  const removeAd = (id: number) => {
     if (ads.length > 1) {
       setAds(ads.filter((a) => a.id !== id));
     }
   };
 
-  const updateAd = (id: string, updates: Partial<Ad>) => {
+  const updateAd = (id: number, updates: Partial<Ad>) => {
     setAds(ads.map((a) => (a.id === id ? { ...a, ...updates } : a)));
   };
 
   const testHealthCheck = async () => {
     try {
-      const response = await fetch("http://localhost:8000/health");
+      const response = await fetch("http://localhost:8000/");
       const data = await response.json();
-      console.log("Health Check:", data);
+      console.log("API Root:", data);
     } catch (error) {
-      console.error("Health check failed:", error);
+      console.error("API check failed:", error);
     }
   };
 
   const testMockData = async () => {
     try {
-      const response = await fetch("http://localhost:8000/optimize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          campaigns: [{ service_name: "Test", approved_budget: 1000, no_of_days: 30, time: "2024-01-01", channel_name: "Google", search_tag_cat: "tech" }],
-          ads: [{ device_type: "Desktop", location: "US", age_group: "25-34", gender: "All", content_type: "Video", ad_topic: "Test", ad_target_audience: "Developers", cost_per_click: 2.5 }],
-          budget: 1000,
-        }),
-      });
+      const response = await fetch("http://localhost:8000/allData");
       const data = await response.json();
-      console.log("Mock Optimization Result:", data);
+      console.log("All Data from API:", data);
     } catch (error) {
-      console.error("Mock data fetch failed:", error);
+      console.error("Data fetch failed:", error);
     }
   };
 
   const handleOptimize = async () => {
     setIsOptimizing(true);
+    setResults(null);
+
+    const totalBudget = campaigns.reduce((sum, c) => sum + c.approved_budget, 0);
+
     try {
-      const response = await fetch("http://localhost:8000/optimize", {
+      const response = await fetch("http://localhost:8000/optimize_marketing_allocation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          campaigns: campaigns.map((c) => ({
-            service_name: c.serviceName,
-            approved_budget: c.approvedBudget,
-            no_of_days: c.duration,
-            time: c.startDate,
-            channel_name: c.channelName,
-            search_tag_cat: c.categoryTags.join(","),
-          })),
-          ads: ads.map((a) => ({
-            device_type: a.deviceType,
-            location: a.location,
-            age_group: a.ageGroup,
-            gender: a.gender,
-            content_type: a.contentType,
-            ad_topic: a.adTopic,
-            ad_target_audience: a.targetAudience,
-            cost_per_click: a.costPerClick,
-          })),
-          budget: campaigns.reduce((sum, c) => sum + c.approvedBudget, 0),
+          campaigns: campaigns,
+          ads: ads,
+          total_budget: totalBudget,
+          population_size: 100,
+          max_generations: 150,
+          mutation_rate: 0.15,
+          crossover_rate: 0.85,
+          ideal_roi: 0.0,
+          ga_verbose: false,
         }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Optimization error:", errorData);
+        alert(`Optimization failed: ${errorData.detail || 'Unknown error'}`);
+        return;
+      }
+
       const data = await response.json();
       console.log("Optimization results:", data);
-      // TODO: Display results
+      setResults(data);
     } catch (error) {
       console.error("Optimization failed:", error);
+      alert("Failed to connect to API. Make sure the server is running.");
     } finally {
       setIsOptimizing(false);
     }
@@ -173,15 +178,41 @@ export default function Home() {
             onClick={testHealthCheck}
             className="px-3 py-1 text-xs text-slate-500 border border-slate-300 rounded hover:bg-slate-100"
           >
-            Test Health
+            Test API
           </button>
           <button
             onClick={testMockData}
             className="px-3 py-1 text-xs text-slate-500 border border-slate-300 rounded hover:bg-slate-100"
           >
-            Test Mock Data
+            Fetch All Data
           </button>
         </div>
+
+        {/* Results Section */}
+        {results && (
+          <div className="mt-8 p-6 bg-white rounded-xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">Optimization Results</h3>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-sm text-slate-500">Total Fitness</p>
+                <p className="text-xl font-semibold">{results.total_fitness?.toFixed(4) || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Budget Used</p>
+                <p className="text-xl font-semibold">${results.total_budget_used?.toFixed(2) || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Expected Revenue</p>
+                <p className="text-xl font-semibold">${results.total_expected_revenue?.toFixed(2) || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-500">Expected Cost</p>
+                <p className="text-xl font-semibold">${results.total_expected_cost?.toFixed(2) || 'N/A'}</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400">Full results logged to console</p>
+          </div>
+        )}
       </main>
     </div>
   );

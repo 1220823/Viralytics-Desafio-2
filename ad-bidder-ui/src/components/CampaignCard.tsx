@@ -3,9 +3,9 @@
 import { useState } from "react";
 import {
   Campaign,
-  SERVICE_OPTIONS,
+  EXT_SERVICE_OPTIONS,
   CHANNEL_OPTIONS,
-  CATEGORY_OPTIONS,
+  SEARCH_TAG_OPTIONS,
 } from "@/types";
 
 interface CampaignCardProps {
@@ -28,9 +28,8 @@ export default function CampaignCard({
   const [open, setOpen] = useState(isOpen);
 
   const getDisplayName = () => {
-    if (campaign.serviceName) {
-      const service = SERVICE_OPTIONS.find((s) => s.value === campaign.serviceName);
-      return service?.label || campaign.serviceName;
+    if (campaign.ext_service_name) {
+      return campaign.ext_service_name;
     }
     return `Campaign ${index}`;
   };
@@ -81,14 +80,13 @@ export default function CampaignCard({
               Service Name <span className="text-red-500">*</span>
             </label>
             <select
-              value={campaign.serviceName}
-              onChange={(e) => onUpdate({ serviceName: e.target.value })}
+              value={campaign.ext_service_name}
+              onChange={(e) => onUpdate({ ext_service_name: e.target.value as Campaign['ext_service_name'] })}
               className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 px-3"
             >
-              <option value="">Select a service...</option>
-              {SERVICE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
+              {EXT_SERVICE_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
                 </option>
               ))}
             </select>
@@ -100,14 +98,13 @@ export default function CampaignCard({
               Channel Name <span className="text-red-500">*</span>
             </label>
             <select
-              value={campaign.channelName}
-              onChange={(e) => onUpdate({ channelName: e.target.value })}
+              value={campaign.channel_name}
+              onChange={(e) => onUpdate({ channel_name: e.target.value as Campaign['channel_name'] })}
               className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 px-3"
             >
-              <option value="">Select a channel...</option>
               {CHANNEL_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                <option key={opt} value={opt}>
+                  {opt}
                 </option>
               ))}
             </select>
@@ -125,9 +122,9 @@ export default function CampaignCard({
                 </div>
                 <input
                   type="number"
-                  value={campaign.approvedBudget}
+                  value={campaign.approved_budget}
                   onChange={(e) =>
-                    onUpdate({ approvedBudget: parseFloat(e.target.value) || 0 })
+                    onUpdate({ approved_budget: parseFloat(e.target.value) || 0 })
                   }
                   className="block w-full rounded-lg border border-slate-200 pl-7 pr-12 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 bg-white"
                 />
@@ -144,9 +141,9 @@ export default function CampaignCard({
               <div className="relative rounded-md">
                 <input
                   type="number"
-                  value={campaign.duration}
+                  value={campaign.no_of_days}
                   onChange={(e) =>
-                    onUpdate({ duration: parseInt(e.target.value) || 0 })
+                    onUpdate({ no_of_days: parseInt(e.target.value) || 0 })
                   }
                   className="block w-full rounded-lg border border-slate-200 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 bg-white px-3"
                 />
@@ -157,7 +154,7 @@ export default function CampaignCard({
             </div>
           </div>
 
-          {/* Start Date & Category Tags Row */}
+          {/* Start Date & Search Tag Category Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -165,37 +162,27 @@ export default function CampaignCard({
               </label>
               <input
                 type="date"
-                value={campaign.startDate}
-                onChange={(e) => onUpdate({ startDate: e.target.value })}
+                value={campaign.time}
+                onChange={(e) => onUpdate({ time: e.target.value })}
                 className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 px-3"
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Category Tags
+                Search Tag Category
               </label>
               <select
-                multiple
-                value={campaign.categoryTags}
-                onChange={(e) => {
-                  const selected = Array.from(
-                    e.target.selectedOptions,
-                    (opt) => opt.value
-                  );
-                  onUpdate({ categoryTags: selected });
-                }}
+                value={campaign.search_tag_cat}
+                onChange={(e) => onUpdate({ search_tag_cat: e.target.value as Campaign['search_tag_cat'] })}
                 className="w-full rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 px-3"
               >
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                {SEARCH_TAG_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
                   </option>
                 ))}
               </select>
-              <div className="text-xs text-slate-500 mt-1">
-                Hold Ctrl/Cmd to select multiple
-              </div>
             </div>
           </div>
 
@@ -240,9 +227,9 @@ export default function CampaignCard({
                 <input
                   type="number"
                   step="0.01"
-                  value={campaign.mediaCost}
+                  value={campaign.media_cost_usd}
                   onChange={(e) =>
-                    onUpdate({ mediaCost: parseFloat(e.target.value) || 0 })
+                    onUpdate({ media_cost_usd: parseFloat(e.target.value) || 0 })
                   }
                   className="block w-full rounded-lg border border-slate-200 pl-7 pr-4 focus:border-[#1d3d5d] focus:ring-[#1d3d5d] sm:text-sm h-11 bg-white"
                 />

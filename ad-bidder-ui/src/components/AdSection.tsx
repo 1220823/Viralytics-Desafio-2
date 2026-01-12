@@ -6,8 +6,8 @@ import AdCard from "./AdCard";
 interface AdSectionProps {
   ads: Ad[];
   onAdd: () => void;
-  onRemove: (id: string) => void;
-  onUpdate: (id: string, updates: Partial<Ad>) => void;
+  onRemove: (id: number) => void;
+  onUpdate: (id: number, updates: Partial<Ad>) => void;
 }
 
 export default function AdSection({
