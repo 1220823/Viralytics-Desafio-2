@@ -158,35 +158,55 @@ export default function Home() {
 
     const totalBudget = campaigns.reduce((sum, c) => sum + c.approved_budget, 0);
 
+    const requestPayload = {
+      campaigns: campaigns,
+      ads: ads,
+      total_budget: totalBudget,
+      population_size: 100,
+      max_generations: 150,
+      mutation_rate: 0.15,
+      crossover_rate: 0.85,
+      ideal_roi: 0.0,
+      ga_verbose: false,
+    };
+
+    console.log("=== OPTIMIZATION REQUEST ===");
+    console.log("Endpoint: POST /optimize_marketing_allocation");
+    console.log("Campaigns:", campaigns.length);
+    console.log("Ads:", ads.length);
+    console.log("Total Budget:", totalBudget);
+    console.log("Full Request Payload:", requestPayload);
+
     try {
       const response = await fetch("http://localhost:8000/optimize_marketing_allocation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          campaigns: campaigns,
-          ads: ads,
-          total_budget: totalBudget,
-          population_size: 100,
-          max_generations: 150,
-          mutation_rate: 0.15,
-          crossover_rate: 0.85,
-          ideal_roi: 0.0,
-          ga_verbose: false,
-        }),
+        body: JSON.stringify(requestPayload),
       });
+
+      console.log("Response Status:", response.status, response.statusText);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Optimization error:", errorData);
+        console.error("=== OPTIMIZATION ERROR ===");
+        console.error("Error Data:", errorData);
         alert(`Optimization failed: ${errorData.detail || 'Unknown error'}`);
         return;
       }
 
       const data = await response.json();
-      console.log("Optimization results:", data);
+      console.log("=== OPTIMIZATION SUCCESS ===");
+      console.log("Full Response:", data);
+      console.log("Total Fitness:", data.total_fitness);
+      console.log("Budget Used:", data.total_budget_used);
+      console.log("Expected Revenue:", data.total_expected_revenue);
+      console.log("Expected Cost:", data.total_expected_cost);
+      console.log("Number of Allocations:", data.allocations?.length || 0);
+
       setResults(data);
     } catch (error) {
-      console.error("Optimization failed:", error);
+      console.error("=== OPTIMIZATION FAILED ===");
+      console.error("Error:", error);
       alert("Failed to connect to API. Make sure the server is running.");
     } finally {
       setIsOptimizing(false);
