@@ -29,7 +29,7 @@ export default function Home() {
 
   // Advanced parameters state
   const [populationSize, setPopulationSize] = useState(100);
-  const [maxGenerations, setMaxGenerations] = useState(150);
+  const [maxGenerations, setMaxGenerations] = useState(250);
   const [mutationRate, setMutationRate] = useState(0.15);
   const [crossoverRate, setCrossoverRate] = useState(0.85);
   const [riskFactor, setRiskFactor] = useState(1.0);
