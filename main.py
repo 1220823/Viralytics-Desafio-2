@@ -314,8 +314,9 @@ async def compare_optimization_algorithms(request: ComparisonRequest):
                 "fitness": ga_solution.fitness,
                 "total_roi": ga_solution.total_roi,
                 "total_cost": ga_solution.total_cost,
-                "total_revenue": ga_solution.total_revenue,
-                "profit": ga_solution.total_revenue - ga_solution.total_cost,
+                "total_media_revenue": ga_solution.total_media_revenue,
+                "total_media_cost": ga_solution.total_media_cost,
+                "profit": ga_solution.total_media_revenue - ga_solution.total_media_cost,
                 "execution_time_seconds": ga_time,
                 "allocation": ga_solution.allocation,
                 "campaign_metrics": ga_solution.campaign_metrics
@@ -349,9 +350,10 @@ async def compare_optimization_algorithms(request: ComparisonRequest):
             ts_result = {
                 "fitness": ts_solution.fitness,
                 "total_roi": ts_solution.total_roi,
-                "total_cost": ts_solution.total_cost,
-                "total_revenue": ts_solution.total_revenue,
-                "profit": ts_solution.total_revenue - ts_solution.total_cost,
+                "total_cost": ga_solution.total_cost,
+                "total_media_revenue": ga_solution.total_media_revenue,
+                "total_media_cost": ga_solution.total_media_cost,
+                "profit": ga_solution.total_media_revenue - ga_solution.total_media_cost,
                 "execution_time_seconds": ts_time,
                 "allocation": ts_solution.allocation,
                 "campaign_metrics": ts_solution.campaign_metrics
