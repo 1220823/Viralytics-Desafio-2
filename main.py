@@ -2,13 +2,13 @@ import json
 from datetime import date, datetime
 import random
 from typing import List, Literal, Optional
-from models import Campaign, Ad, AllMarketingData, OptimizationRequest 
+from Classes.models import Campaign, Ad, AllMarketingData, OptimizationRequest 
 from pydantic.dataclasses import dataclass
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import the main orchestration function from genetic_algorithm_core
-from geneticAlgorithm import Individual, run_genetic_optimization
+from Genetic_Algorithm.geneticAlgorithm import Individual, run_genetic_optimization
 
 # --- 2. Data Storage (in-memory, loaded from JSON) ---
 campaigns_db: List[Campaign] = []
