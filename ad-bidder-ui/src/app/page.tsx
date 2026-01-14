@@ -7,34 +7,15 @@ import AdSection from "@/components/AdSection";
 import LoadModal from "@/components/LoadModal";
 import { Campaign, Ad, DEFAULT_CAMPAIGN, DEFAULT_AD, OptimizationResponse } from "@/types";
 
-let nextCampaignId = 1;
-let nextAdId = 1;
+let keyCounter = 0;
 
-function generateCampaignId() {
-  return nextCampaignId++;
-}
-
-function generateAdId() {
-  return nextAdId++;
+function generateUniqueKey(prefix: string) {
+  return `${prefix}-${Date.now()}-${keyCounter++}`;
 }
 
 export default function Home() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([
-    {
-      ...DEFAULT_CAMPAIGN,
-      id: generateCampaignId(),
-      name: "Campaign 1",
-      time: new Date().toISOString().split('T')[0]
-    },
-  ]);
-  const [ads, setAds] = useState<Ad[]>([
-    {
-      ...DEFAULT_AD,
-      id: generateAdId(),
-      name: "Ad 1",
-      timestamp: new Date().toISOString()
-    },
-  ]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [ads, setAds] = useState<Ad[]>([]);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [results, setResults] = useState<OptimizationResponse | null>(null);
 
@@ -60,58 +41,72 @@ export default function Home() {
   const effectiveBudget = totalBudgetOverride !== null ? totalBudgetOverride : minBudget;
 
   // Helper functions for results display
-  const getCampaignById = (id: number): Campaign | undefined => {
-    return campaigns.find(c => c.id === id);
+  // Results use sequential IDs (1, 2, 3...) that we assign before sending
+  // Map API ID to the campaign/ad at that index
+  const getCampaignByApiId = (apiId: number): Campaign | undefined => {
+    return campaigns[apiId - 1]; // API IDs are 1-indexed
   };
 
-  const getAdById = (id: number): Ad | undefined => {
-    return ads.find(a => a.id === id);
+  const getAdByApiId = (apiId: number): Ad | undefined => {
+    return ads[apiId - 1]; // API IDs are 1-indexed
+  };
+
+  const getAdKey = (apiId: number): string | undefined => {
+    return ads[apiId - 1]?._key; // Return the _key of the ad for scrolling
   };
 
   const calculateNetProfit = (revenue: number, cost: number): number => {
     return revenue - cost;
   };
 
-  const addCampaign = () => {
-    const newId = generateCampaignId();
-    setCampaigns([...campaigns, {
-      ...DEFAULT_CAMPAIGN,
-      id: newId,
-      name: `Campaign ${newId}`,
-      time: new Date().toISOString().split('T')[0]
-    }]);
-  };
-
-  const removeCampaign = (id: number) => {
-    if (campaigns.length > 1) {
-      setCampaigns(campaigns.filter((c) => c.id !== id));
+  const scrollToAd = (adKey: string) => {
+    const element = document.getElementById(`ad-${adKey}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add a brief highlight effect
+      element.classList.add('ring-2', 'ring-[#4A90A4]', 'ring-offset-2');
+      setTimeout(() => {
+        element.classList.remove('ring-2', 'ring-[#4A90A4]', 'ring-offset-2');
+      }, 2000);
     }
   };
 
-  const updateCampaign = (id: number, updates: Partial<Campaign>) => {
+  const addCampaign = () => {
+    setCampaigns([...campaigns, {
+      ...DEFAULT_CAMPAIGN,
+      _key: generateUniqueKey('campaign'),
+      name: `Campaign ${campaigns.length + 1}`,
+      time: new Date().toISOString().split('T')[0],
+      overcost: 0
+    }]);
+  };
+
+  const removeCampaign = (key: string) => {
+    setCampaigns(campaigns.filter((c) => c._key !== key));
+  };
+
+  const updateCampaign = (key: string, updates: Partial<Campaign>) => {
     setCampaigns(
-      campaigns.map((c) => (c.id === id ? { ...c, ...updates } : c))
+      campaigns.map((c) => (c._key === key ? { ...c, ...updates } : c))
     );
   };
 
   const addAd = () => {
-    const newId = generateAdId();
     setAds([...ads, {
       ...DEFAULT_AD,
-      id: newId,
-      name: `Ad ${newId}`,
-      timestamp: new Date().toISOString()
+      _key: generateUniqueKey('ad'),
+      name: `Ad ${ads.length + 1}`,
+      timestamp: new Date().toISOString(),
+      conversion_rate: 0
     }]);
   };
 
-  const removeAd = (id: number) => {
-    if (ads.length > 1) {
-      setAds(ads.filter((a) => a.id !== id));
-    }
+  const removeAd = (key: string) => {
+    setAds(ads.filter((a) => a._key !== key));
   };
 
-  const updateAd = (id: number, updates: Partial<Ad>) => {
-    setAds(ads.map((a) => (a.id === id ? { ...a, ...updates } : a)));
+  const updateAd = (key: string, updates: Partial<Ad>) => {
+    setAds(ads.map((a) => (a._key === key ? { ...a, ...updates } : a)));
   };
 
   const testHealthCheck = async () => {
@@ -166,25 +161,170 @@ export default function Home() {
 
   const handleSelectCampaign = (item: Campaign | Ad) => {
     const campaign = item as Campaign;
-    const newId = generateCampaignId();
-    setCampaigns([...campaigns, { ...campaign, id: newId }]);
+    // Keep the original ID from the API, add unique _key, ensure overcost field exists
+    setCampaigns([...campaigns, {
+      ...campaign,
+      _key: generateUniqueKey('campaign'),
+      overcost: campaign.overcost ?? 0
+    }]);
     setShowCampaignModal(false);
   };
 
   const handleSelectAd = (item: Campaign | Ad) => {
     const ad = item as Ad;
-    const newId = generateAdId();
-    setAds([...ads, { ...ad, id: newId }]);
+    // Keep the original ID from the API, add unique _key, ensure conversion_rate field exists
+    setAds([...ads, {
+      ...ad,
+      _key: generateUniqueKey('ad'),
+      conversion_rate: ad.conversion_rate ?? 0
+    }]);
     setShowAdModal(false);
   };
 
   const handleOptimize = async () => {
+    // Validation: Check if at least one campaign exists
+    if (campaigns.length === 0) {
+      alert('Please add at least one campaign before optimizing.');
+      return;
+    }
+
+    // Validation: Check if at least one ad exists
+    if (ads.length === 0) {
+      alert('Please add at least one ad before optimizing.');
+      return;
+    }
+
+    // Validation: Check all campaign fields
+    for (let i = 0; i < campaigns.length; i++) {
+      const campaign = campaigns[i];
+      if (!campaign.name || campaign.name.trim() === '') {
+        alert(`Campaign ${i + 1}: Name is required.`);
+        return;
+      }
+      if (!campaign.no_of_days || campaign.no_of_days <= 0) {
+        alert(`Campaign ${i + 1}: Number of days must be greater than 0.`);
+        return;
+      }
+      if (!campaign.time || campaign.time.trim() === '') {
+        alert(`Campaign ${i + 1}: Date is required.`);
+        return;
+      }
+      if (!campaign.approved_budget || campaign.approved_budget <= 0) {
+        alert(`Campaign ${i + 1}: Approved budget must be greater than 0.`);
+        return;
+      }
+      if (campaign.impressions === null || campaign.impressions === undefined || campaign.impressions < 0) {
+        alert(`Campaign ${i + 1}: Impressions must be a valid number (0 or greater).`);
+        return;
+      }
+      if (campaign.clicks === null || campaign.clicks === undefined || campaign.clicks < 0) {
+        alert(`Campaign ${i + 1}: Clicks must be a valid number (0 or greater).`);
+        return;
+      }
+      if (campaign.media_cost_usd === null || campaign.media_cost_usd === undefined || campaign.media_cost_usd < 0) {
+        alert(`Campaign ${i + 1}: Media cost must be a valid number (0 or greater).`);
+        return;
+      }
+      if (!campaign.ext_service_name) {
+        alert(`Campaign ${i + 1}: External service name is required.`);
+        return;
+      }
+      if (!campaign.channel_name) {
+        alert(`Campaign ${i + 1}: Channel name is required.`);
+        return;
+      }
+      if (!campaign.search_tag_cat) {
+        alert(`Campaign ${i + 1}: Search tag category is required.`);
+        return;
+      }
+    }
+
+    // Validation: Check all ad fields
+    for (let i = 0; i < ads.length; i++) {
+      const ad = ads[i];
+      if (!ad.name || ad.name.trim() === '') {
+        alert(`Ad ${i + 1}: Name is required.`);
+        return;
+      }
+      if (!ad.click_through_rate || ad.click_through_rate <= 0) {
+        alert(`Ad ${i + 1}: Click-through rate must be greater than 0.`);
+        return;
+      }
+      if (!ad.view_time || ad.view_time <= 0) {
+        alert(`Ad ${i + 1}: View time must be greater than 0.`);
+        return;
+      }
+      if (!ad.cost_per_click || ad.cost_per_click <= 0) {
+        alert(`Ad ${i + 1}: Cost per click must be greater than 0.`);
+        return;
+      }
+      if (ad.roi === null || ad.roi === undefined) {
+        alert(`Ad ${i + 1}: ROI must be a valid number.`);
+        return;
+      }
+      if (!ad.timestamp || ad.timestamp.trim() === '') {
+        alert(`Ad ${i + 1}: Timestamp is required.`);
+        return;
+      }
+      if (!ad.age_group) {
+        alert(`Ad ${i + 1}: Age group is required.`);
+        return;
+      }
+      if (!ad.engagement_level) {
+        alert(`Ad ${i + 1}: Engagement level is required.`);
+        return;
+      }
+      if (!ad.device_type) {
+        alert(`Ad ${i + 1}: Device type is required.`);
+        return;
+      }
+      if (!ad.location) {
+        alert(`Ad ${i + 1}: Location is required.`);
+        return;
+      }
+      if (!ad.gender) {
+        alert(`Ad ${i + 1}: Gender is required.`);
+        return;
+      }
+      if (!ad.content_type) {
+        alert(`Ad ${i + 1}: Content type is required.`);
+        return;
+      }
+      if (!ad.ad_topic) {
+        alert(`Ad ${i + 1}: Ad topic is required.`);
+        return;
+      }
+      if (!ad.ad_target_audience) {
+        alert(`Ad ${i + 1}: Target audience is required.`);
+        return;
+      }
+    }
+
     setIsOptimizing(true);
     setResults(null);
 
+    // Prepare payload: assign sequential IDs, strip _key, ensure required fields exist
+    const campaignsPayload = campaigns.map((campaign, index) => {
+      const { _key, ...rest } = campaign;
+      return {
+        ...rest,
+        id: index + 1,
+        overcost: campaign.overcost ?? 0
+      };
+    });
+
+    const adsPayload = ads.map((ad, index) => {
+      const { _key, ...rest } = ad;
+      return {
+        ...rest,
+        id: index + 1,
+        conversion_rate: ad.conversion_rate ?? 0
+      };
+    });
+
     const requestPayload = {
-      campaigns: campaigns,
-      ads: ads,
+      campaigns: campaignsPayload,
+      ads: adsPayload,
       total_budget: effectiveBudget,
       population_size: populationSize,
       max_generations: maxGenerations,
@@ -214,7 +354,24 @@ export default function Home() {
         const errorData = await response.json();
         console.error("=== OPTIMIZATION ERROR ===");
         console.error("Error Data:", errorData);
-        alert(`Optimization failed: ${errorData.detail || 'Unknown error'}`);
+
+        // Try to extract detailed error information
+        let errorMessage = 'Unknown error';
+        if (errorData.detail) {
+          if (typeof errorData.detail === 'string') {
+            errorMessage = errorData.detail;
+          } else if (Array.isArray(errorData.detail)) {
+            // FastAPI validation errors come as an array
+            errorMessage = errorData.detail.map((err: any) => {
+              const field = err.loc ? err.loc.join(' -> ') : 'Unknown field';
+              return `${field}: ${err.msg}`;
+            }).join('\n');
+          } else {
+            errorMessage = JSON.stringify(errorData.detail);
+          }
+        }
+
+        alert(`Optimization failed:\n\n${errorMessage}`);
         return;
       }
 
@@ -509,7 +666,7 @@ export default function Home() {
                 </div>
               ) : (
                 Object.entries(results.allocation).map(([campaignId, adIds]) => {
-                  const campaign = getCampaignById(parseInt(campaignId));
+                  const campaign = getCampaignByApiId(parseInt(campaignId));
                   const metrics = results.campaign_metrics[campaignId];
                   const campaignName = campaign?.name || `Unknown Campaign #${campaignId}`;
                   const isPositiveROI = metrics.roi >= 0;
@@ -612,12 +769,18 @@ export default function Home() {
                         <div className="pt-4 border-t border-slate-100">
                           <h4 className="text-sm font-semibold text-slate-700 mb-3">Allocated Ads ({adIds.length})</h4>
                           <div className="flex flex-wrap gap-2">
-                            {adIds.map((adId) => {
-                              const ad = getAdById(adId);
-                              const adName = ad?.name || `Unknown Ad #${adId}`;
+                            {adIds.map((apiAdId) => {
+                              const ad = getAdByApiId(apiAdId);
+                              const adKey = getAdKey(apiAdId);
+                              const adName = ad?.name || `Unknown Ad #${apiAdId}`;
                               return (
-                                <div key={adId} className="px-3 py-2 bg-[#4A90A4]/10 border border-[#4A90A4]/20 rounded-lg">
-                                  <div className="flex flex-col">
+                                <button
+                                  key={apiAdId}
+                                  onClick={() => adKey && scrollToAd(adKey)}
+                                  className="px-3 py-2 bg-[#4A90A4]/10 border border-[#4A90A4]/20 rounded-lg hover:bg-[#4A90A4]/20 hover:border-[#4A90A4]/40 transition-all cursor-pointer"
+                                  title="Click to scroll to this ad"
+                                >
+                                  <div className="flex flex-col text-left">
                                     <span className="text-sm font-semibold text-slate-800">{adName}</span>
                                     {ad && (
                                       <span className="text-xs text-slate-500">
@@ -625,7 +788,7 @@ export default function Home() {
                                       </span>
                                     )}
                                   </div>
-                                </div>
+                                </button>
                               );
                             })}
                           </div>

@@ -7,8 +7,8 @@ interface CampaignSectionProps {
   campaigns: Campaign[];
   onAdd: () => void;
   onLoad: () => void;
-  onRemove: (id: number) => void;
-  onUpdate: (id: number, updates: Partial<Campaign>) => void;
+  onRemove: (key: string) => void;
+  onUpdate: (key: string, updates: Partial<Campaign>) => void;
 }
 
 export default function CampaignSection({
@@ -32,13 +32,13 @@ export default function CampaignSection({
 
       {campaigns.map((campaign, index) => (
         <CampaignCard
-          key={campaign.id}
+          key={campaign._key}
           campaign={campaign}
           index={index + 1}
           isOpen={index === 0}
-          canRemove={campaigns.length > 1}
-          onRemove={() => onRemove(campaign.id)}
-          onUpdate={(updates) => onUpdate(campaign.id, updates)}
+          canRemove={true}
+          onRemove={() => onRemove(campaign._key)}
+          onUpdate={(updates) => onUpdate(campaign._key, updates)}
         />
       ))}
 

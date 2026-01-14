@@ -1,7 +1,8 @@
 // Types matching backend models.py
 
 export interface Campaign {
-  id: number;
+  _key: string; // Unique key for React (always present)
+  id?: number; // Only present for API-loaded items
   name: string;
   no_of_days: number;
   time: string; // date as ISO string
@@ -16,7 +17,8 @@ export interface Campaign {
 }
 
 export interface Ad {
-  id: number;
+  _key: string; // Unique key for React (always present)
+  id?: number; // Only present for API-loaded items
   name: string;
   click_through_rate: number;
   view_time: number;
@@ -73,8 +75,8 @@ export interface OptimizationResponse {
   };
 }
 
-// Default values for forms
-export const DEFAULT_CAMPAIGN: Omit<Campaign, 'id'> = {
+// Default values for forms (exclude _key and id as they're generated dynamically)
+export const DEFAULT_CAMPAIGN: Omit<Campaign, '_key' | 'id'> = {
   name: '',
   no_of_days: 30,
   time: '2026-01-01',
@@ -87,7 +89,7 @@ export const DEFAULT_CAMPAIGN: Omit<Campaign, 'id'> = {
   search_tag_cat: 'Inmarket',
 };
 
-export const DEFAULT_AD: Omit<Ad, 'id'> = {
+export const DEFAULT_AD: Omit<Ad, '_key' | 'id'> = {
   name: '',
   click_through_rate: 0.05,
   view_time: 30,

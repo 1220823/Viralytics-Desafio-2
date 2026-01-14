@@ -33,6 +33,7 @@ export default function CampaignCard({
 
   return (
     <details
+      id={`campaign-${campaign._key}`}
       className="group bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
       open={open}
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}

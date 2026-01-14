@@ -38,6 +38,7 @@ export default function AdCard({
 
   return (
     <details
+      id={`ad-${ad._key}`}
       className="group bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
       open={open}
       onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}

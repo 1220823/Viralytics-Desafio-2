@@ -7,8 +7,8 @@ interface AdSectionProps {
   ads: Ad[];
   onAdd: () => void;
   onLoad: () => void;
-  onRemove: (id: number) => void;
-  onUpdate: (id: number, updates: Partial<Ad>) => void;
+  onRemove: (key: string) => void;
+  onUpdate: (key: string, updates: Partial<Ad>) => void;
 }
 
 export default function AdSection({
@@ -37,13 +37,13 @@ export default function AdSection({
 
       {ads.map((ad, index) => (
         <AdCard
-          key={ad.id}
+          key={ad._key}
           ad={ad}
           label={getAdLabel(index)}
           isOpen={index === 0}
-          canRemove={ads.length > 1}
-          onRemove={() => onRemove(ad.id)}
-          onUpdate={(updates) => onUpdate(ad.id, updates)}
+          canRemove={true}
+          onRemove={() => onRemove(ad._key)}
+          onUpdate={(updates) => onUpdate(ad._key, updates)}
         />
       ))}
 
