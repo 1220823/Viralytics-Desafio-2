@@ -30,7 +30,7 @@ class Ad:
     roi: float 
     timestamp: datetime
     age_group: Literal['18-24', '25-34', '35-44', '45-54', '55+']
-    engagement_level: Literal['Ignored', 'Liked', 'Commented', 'Shared']
+    engagement_level: Literal['Ignored', 'Liked', 'Commented', 'Shared', 'Viewed']
     device_type: Literal['Tablet', 'Desktop', 'Mobile']
     location: Literal['UK', 'Germany', 'India', 'USA', 'Canada']
     gender: Literal['Male', 'Female']

@@ -22,8 +22,9 @@ class Individual:
         allocation: Dict mapping campaign_id to list of ad_ids
         fitness: Calculated fitness score
         total_roi: Overall return on investment
-        total_cost: Total media cost
-        total_revenue: Total revenue generated
+        total_cost: Total cost incurred
+        total_media_cost: Total media cost
+        total_media_revenue: Total media revenue generated
         campaign_metrics: Detailed metrics per campaign
     
     Constraints:
@@ -36,7 +37,8 @@ class Individual:
     fitness: float = 0.0
     total_roi: float = 0.0
     total_cost: float = 0.0
-    total_revenue: float = 0.0
+    total_media_cost: float = 0.0
+    total_media_revenue: float = 0.0
     campaign_metrics: Dict[int, dict] = field(default_factory=dict)
     
     def get_all_ad_ids(self) -> List[int]:
@@ -165,9 +167,6 @@ class FitnessEvaluator:
                 
                 campaign_revenue += ad_revenue
             
-            # Cost for budget constraint = budget cost + ad spending
-            campaign_total_cost = campaign_budget_cost + campaign_ads_cost
-            
             # Cost for ROI = only media costs (campaign media + ad spending)
             campaign_total_media_cost = campaign_media_cost + campaign_ads_cost
             
@@ -175,7 +174,7 @@ class FitnessEvaluator:
             campaign_roi = ((campaign_revenue - campaign_total_media_cost) / 
                            campaign_total_media_cost if campaign_total_media_cost > 0 else 0)
             
-            total_cost += campaign_total_cost
+            total_cost += campaign_budget_cost
             total_media_cost += campaign_total_media_cost
             total_media_revenue += campaign_revenue
             
@@ -233,8 +232,9 @@ class FitnessEvaluator:
         
         individual.fitness = fitness
         individual.total_roi = total_roi
-        individual.total_cost = total_media_cost  # Store media-based cost for ROI tracking
-        individual.total_revenue = total_media_revenue
+        individual.total_cost = total_cost  # Store media-based cost for ROI tracking
+        individual.total_media_cost = total_media_cost
+        individual.total_media_revenue = total_media_revenue
         individual.campaign_metrics = campaign_metrics
         
         return fitness
@@ -696,8 +696,8 @@ def print_solution_details(solution: Individual, data_manager: DataManager):
     print(f"  • ROI Total: {solution.total_roi:.2%}")
     print(f"  • Fitness: {solution.fitness:.3f}")
     print(f"  • Custo Total: ${solution.total_cost:,.2f}")
-    print(f"  • Revenue Total: ${solution.total_revenue:,.2f}")
-    print(f"  • Lucro: ${solution.total_revenue - solution.total_cost:,.2f}")
+    print(f"  • Revenue Total: ${solution.total_media_revenue:,.2f}")
+    print(f"  • Lucro: ${solution.total_media_revenue - solution.total_media_cost:,.2f}")
     
     print(f"\n📈 DETALHES POR CAMPANHA:")
     print("-" * 70)

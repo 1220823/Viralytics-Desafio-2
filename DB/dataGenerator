@@ -2,8 +2,8 @@ import json
 import random
 from datetime import datetime, timedelta
 
-num_campaigns_const = 7
-num_ads_const = 20
+num_campaigns_const = 10
+num_ads_const = 40
 
 def generate_campaigns_data(num_campaigns):
     campaigns = []
@@ -13,9 +13,11 @@ def generate_campaigns_data(num_campaigns):
     search_tag_cats = ['Youtube', 'Inmarket', 'Retargeting']
     
     campaign_names_base = [
-        "Gut Health Revival", "Immune Boost Challenge", "Plant-Based Power", 
-        "Sugar-Free Lifestyle", "Mindful Eating Journey", "Wellness Warrior Program", 
-        "Hydration Heroes", "Nutrition Navigator", "Healthy Habits Kickstart"
+        "Gut Health Revival", "Immune Boost Challenge", "Plant-Based Power", "Sugar-Free Lifestyle",
+        "Mindful Eating Journey", "Wellness Warrior Program", "Hydration Heroes", "Nutrition Navigator",
+        "Healthy Habits Kickstart", "Metabolism Reboot", "Clean Eating 30", "Peak Performance Protocol",
+        "The Energy Reset", "Balanced Macros Masterclass", "Superfood Discovery", "Sleep & Recovery Science",
+        "Heart Smart Initiative", "Fit Foodie Bootcamp"
     ]
 
     for i in range(1, num_campaigns + 1):
@@ -52,7 +54,7 @@ def generate_ads_data(num_ads):
     ads = []
     
     age_groups = ['18-24', '25-34', '35-44', '45-54', '55+']
-    engagement_levels = ['Ignored', 'Liked', 'Commented', 'Shared']
+    engagement_levels = ['Ignored', 'Liked', 'Commented', 'Shared', 'Viewed']
     device_types = ['Tablet', 'Desktop', 'Mobile']
     locations = ['UK', 'Germany', 'India', 'USA', 'Canada']
     genders = ['Male', 'Female']
@@ -63,21 +65,27 @@ def generate_ads_data(num_ads):
     ]
 
     ad_names_base = [
-        "Transform Your Gut with Probiotics!", "Boost Immunity Naturally", 
-        "Discover Delicious Plant-Based Meals", "Say Goodbye to Sugar Cravings", 
-        "Mindful Bites for a Better You", "Unlock Your Inner Wellness", 
-        "Stay Hydrated, Stay Healthy", "Organic Superfoods for Energy", 
-        "Lose Weight the Healthy Way", "Fuel Your Body with Nutrients",
-        "Eat Clean, Feel Great!", "Your Daily Dose of Vitamins", "Personalized Nutrition Plans",
-        "Achieve Your Fitness Goals", "Sleep Better, Live Better"
+        "Transform Your Gut with Probiotics!", "Boost Immunity Naturally", "Discover Delicious Plant-Based Meals",
+        "Say Goodbye to Sugar Cravings", "Mindful Bites for a Better You", "Unlock Your Inner Wellness",
+        "Stay Hydrated, Stay Healthy", "Organic Superfoods for Energy", "Lose Weight the Healthy Way",
+        "Fuel Your Body with Nutrients", "Eat Clean, Feel Great!", "Your Daily Dose of Vitamins",
+        "Personalized Nutrition Plans", "Achieve Your Fitness Goals", "Sleep Better, Live Better",
+        "Revitalize Your Metabolism", "Nourish Your Body From Within", "The Secret to All-Day Energy",
+        "Radiate Health and Glow", "Balance Your Hormones Naturally", "Holistic Healing Through Food",
+        "Detox Your Diet Safely", "Power Up With Lean Protein", "Heart-Healthy Omega-3s",
+        "Gluten-Free Goodness", "Keto-Friendly Snack Ideas", "Fiber-Rich Foods for Digestion",
+        "Antioxidants for Anti-Aging", "Essential Minerals You Need", "Healthy Fats for Brain Power",
+        "Master Your Weekly Meal Prep", "Smart Snacking Solutions", "Beat the Afternoon Slump",
+        "Post-Workout Recovery Fuel", "Simple Swaps for Better Health", "Crush Your Carb Cravings",
+        "Eating for Mental Clarity"
     ]
 
     for i in range(1, num_ads + 1):
         name = random.choice(ad_names_base)
-        click_through_rate = round(random.uniform(0.01, 0.03), 6) # Increased max a bit for variety
-        view_time = random.randint(10, 60) 
-        cost_per_click = round(random.uniform(0.1, 1.5), 2)
-        roi = round(random.uniform(0.02, 11.57), 2)
+        click_through_rate = round(random.uniform(0.02, 0.2), 6) 
+        view_time = random.randint(5, 90) 
+        cost_per_click = round(random.uniform(0.2, 2.0), 2)
+        roi = round(random.uniform(-0.5, 30), 2)
         
         # Generate timestamp within the last 6 months and next 6 months
         start_date = datetime.now() + timedelta(days=random.randint(-180, 180))
