@@ -59,6 +59,19 @@ export default function Home() {
   const minBudget = campaigns.reduce((sum, c) => sum + c.approved_budget, 0);
   const effectiveBudget = totalBudgetOverride !== null ? totalBudgetOverride : minBudget;
 
+  // Helper functions for results display
+  const getCampaignById = (id: number): Campaign | undefined => {
+    return campaigns.find(c => c.id === id);
+  };
+
+  const getAdById = (id: number): Ad | undefined => {
+    return ads.find(a => a.id === id);
+  };
+
+  const calculateNetProfit = (revenue: number, cost: number): number => {
+    return revenue - cost;
+  };
+
   const addCampaign = () => {
     const newId = generateCampaignId();
     setCampaigns([...campaigns, {
@@ -302,8 +315,21 @@ export default function Home() {
                       min={minBudget}
                       value={totalBudgetOverride !== null ? totalBudgetOverride : minBudget}
                       onChange={(e) => {
-                        const value = parseFloat(e.target.value) || 0;
-                        setTotalBudgetOverride(value < minBudget ? minBudget : value);
+                        const value = e.target.value;
+                        if (value === '' || value === '-') {
+                          setTotalBudgetOverride(minBudget);
+                        } else {
+                          const numValue = parseFloat(value);
+                          if (!isNaN(numValue)) {
+                            setTotalBudgetOverride(numValue);
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = parseFloat(e.target.value);
+                        if (isNaN(value) || value < minBudget) {
+                          setTotalBudgetOverride(minBudget);
+                        }
                       }}
                       className={`block w-full rounded-lg border pl-7 pr-12 sm:text-sm h-11 bg-white ${
                         totalBudgetOverride !== null && totalBudgetOverride < minBudget
@@ -442,27 +468,174 @@ export default function Home() {
 
         {/* Results Section */}
         {results && (
-          <div className="mt-8 p-6 bg-white rounded-xl border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Optimization Results</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-sm text-slate-500">Total Fitness</p>
-                <p className="text-xl font-semibold">{results.total_fitness?.toFixed(4) || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Budget Used</p>
-                <p className="text-xl font-semibold">${results.total_budget_used?.toFixed(2) || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Expected Revenue</p>
-                <p className="text-xl font-semibold">${results.total_expected_revenue?.toFixed(2) || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Expected Cost</p>
-                <p className="text-xl font-semibold">${results.total_expected_cost?.toFixed(2) || 'N/A'}</p>
+          <div className="mt-8 space-y-6">
+            {/* Section A: Overall Metrics */}
+            <div className="p-6 bg-white rounded-xl border border-slate-200">
+              <h3 className="text-xl font-bold text-slate-800 mb-4">Overall Performance</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500 mb-1">Fitness Score</p>
+                  <p className="text-2xl font-semibold text-slate-900">{results.fitness.toFixed(4)}</p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500 mb-1">Total ROI</p>
+                  <p className={`text-2xl font-semibold ${results.total_roi >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {(results.total_roi * 100).toFixed(2)}%
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500 mb-1">Total Cost</p>
+                  <p className="text-2xl font-semibold text-slate-900">${results.total_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500 mb-1">Total Revenue</p>
+                  <p className="text-2xl font-semibold text-slate-900">${results.total_revenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500 mb-1">Net Profit</p>
+                  <p className={`text-2xl font-semibold ${calculateNetProfit(results.total_revenue, results.total_cost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ${calculateNetProfit(results.total_revenue, results.total_cost).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </p>
+                </div>
               </div>
             </div>
-            <p className="text-xs text-slate-400">Full results logged to console</p>
+
+            {/* Section B & C: Campaign Allocations */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-slate-800">Campaign Allocations</h3>
+              {Object.entries(results.allocation).length === 0 ? (
+                <div className="p-6 bg-white rounded-xl border border-slate-200 text-center text-slate-500">
+                  No campaigns allocated
+                </div>
+              ) : (
+                Object.entries(results.allocation).map(([campaignId, adIds]) => {
+                  const campaign = getCampaignById(parseInt(campaignId));
+                  const metrics = results.campaign_metrics[campaignId];
+                  const campaignName = campaign?.name || `Unknown Campaign #${campaignId}`;
+                  const isPositiveROI = metrics.roi >= 0;
+
+                  return (
+                    <details key={campaignId} className="group bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                      <summary className="px-6 py-4 cursor-pointer flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors select-none">
+                        <div className="flex items-center gap-4">
+                          <span className="font-bold text-slate-800">{campaignName}</span>
+                          <span className="text-sm text-slate-500">
+                            {metrics.n_ads} {metrics.n_ads === 1 ? 'ad' : 'ads'} allocated
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${isPositiveROI ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            ROI: {(metrics.roi * 100).toFixed(1)}%
+                          </span>
+                          <span className="material-symbols-outlined text-slate-400 transform group-open:rotate-180 transition-transform duration-200">
+                            expand_more
+                          </span>
+                        </div>
+                      </summary>
+
+                      <div className="p-6 border-t border-slate-100">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                          {/* Left side - Campaign Info */}
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="text-sm font-semibold text-slate-700 mb-3">Campaign Information</h4>
+                              <div className="space-y-2">
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-slate-500">Approved Budget:</span>
+                                  <span className="text-sm font-semibold text-slate-800">
+                                    ${metrics.approved_budget.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-slate-500">Budget Cost:</span>
+                                  <span className="text-sm font-semibold text-slate-800">
+                                    ${metrics.budget_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-slate-500">Overcost:</span>
+                                  <span className={`text-sm font-semibold ${metrics.overcost < 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    ${metrics.overcost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-slate-500">Media Cost:</span>
+                                  <span className="text-sm font-semibold text-slate-800">
+                                    ${metrics.media_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right side - Performance Metrics */}
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="text-sm font-semibold text-slate-700 mb-3">Performance Metrics</h4>
+                              <div className="space-y-2">
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-slate-500">Revenue:</span>
+                                  <span className="text-sm font-semibold text-slate-800">
+                                    ${metrics.revenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-slate-500">Cost:</span>
+                                  <span className="text-sm font-semibold text-slate-800">
+                                    ${metrics.cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-slate-500">ROI:</span>
+                                  <span className={`text-sm font-semibold ${isPositiveROI ? 'text-green-600' : 'text-red-600'}`}>
+                                    {(metrics.roi * 100).toFixed(2)}%
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-slate-500">Avg Conversion Rate:</span>
+                                  <span className="text-sm font-semibold text-slate-800">
+                                    {(metrics.avg_conversion_rate * 100).toFixed(2)}%
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-slate-500">Ads Cost:</span>
+                                  <span className="text-sm font-semibold text-slate-800">
+                                    ${metrics.ads_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Allocated Ads List */}
+                        <div className="pt-4 border-t border-slate-100">
+                          <h4 className="text-sm font-semibold text-slate-700 mb-3">Allocated Ads ({adIds.length})</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {adIds.map((adId) => {
+                              const ad = getAdById(adId);
+                              const adName = ad?.name || `Unknown Ad #${adId}`;
+                              return (
+                                <div key={adId} className="px-3 py-2 bg-[#4A90A4]/10 border border-[#4A90A4]/20 rounded-lg">
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-semibold text-slate-800">{adName}</span>
+                                    {ad && (
+                                      <span className="text-xs text-slate-500">
+                                        {ad.device_type} • {ad.ad_topic} • {ad.ad_target_audience}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </details>
+                  );
+                })
+              )}
+            </div>
           </div>
         )}
       </main>

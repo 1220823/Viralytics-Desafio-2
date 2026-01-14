@@ -46,19 +46,31 @@ export interface OptimizationRequest {
   ga_verbose?: boolean;
 }
 
-// Response from GA optimization (Individual)
-export interface CampaignAllocation {
-  campaign: Campaign;
-  allocated_ads: Ad[];
-  allocated_budget: number;
+// Response from GA optimization
+export interface CampaignMetrics {
+  cost: number;
+  revenue: number;
+  roi: number;
+  overcost: number;
+  budget_cost: number;
+  media_cost: number;
+  ads_cost: number;
+  approved_budget: number;
+  avg_conversion_rate: number;
+  n_ads: number;
 }
 
 export interface OptimizationResponse {
-  allocations: CampaignAllocation[];
-  total_fitness: number;
-  total_budget_used: number;
-  total_expected_revenue: number;
-  total_expected_cost: number;
+  allocation: {
+    [campaignId: string]: number[];  // Campaign ID -> Ad IDs array
+  };
+  fitness: number;
+  total_roi: number;
+  total_cost: number;
+  total_revenue: number;
+  campaign_metrics: {
+    [campaignId: string]: CampaignMetrics;
+  };
 }
 
 // Default values for forms
