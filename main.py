@@ -14,6 +14,8 @@ from Genetic_Algorithm.geneticAlgorithm import Individual, run_genetic_optimizat
 campaigns_db: List[Campaign] = []
 ads_db: List[Ad] = []
 
+from MLModels.AdsPredictor import predict_ads_conversion_rates_ml 
+
 def load_data_from_json():
     """Loads campaign and ad data from JSON files into the in-memory databases."""
     global campaigns_db, ads_db
@@ -110,6 +112,7 @@ async def predict_ads_conversion_rates_endpoint(ads: List[Ad]):
     Receives a list of ads and returns them with predicted conversion rates.
     """
     return predict_ads_conversion_rates(ads)
+    #return predict_ads_conversion_rates_ml(ads)
 
 @app.post("/optimize_marketing_allocation", response_model=Optional[Individual], tags=["Optimization"])
 async def optimize_marketing_allocation(request: OptimizationRequest):

@@ -1,5 +1,5 @@
 # Install Dependencies:
-1 - pip install fastapi uvicorn pydantic
+1 - pip install fastapi uvicorn pydantic holidays
 
 # How to Run:
 
