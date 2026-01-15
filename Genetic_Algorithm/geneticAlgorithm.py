@@ -333,119 +333,116 @@ class GeneticAlgorithm:
     
     def crossover(self, parent1: Individual, parent2: Individual) -> Tuple[Individual, Individual]:
         """
-        Multi-strategy crossover with diversity mechanisms.
-        Randomly selects from single-point, uniform, or ad-level strategies.
+        Ad-Centric Crossover Strategy, this method iterates through every Ad ID 
+        and decides which parent's assignment (destination campaign) the ad will inherit.
+        
+        Strategies:
+        - Single Point: Split the list of ads; first half inherits from P1, second from P2.
+        - Uniform: Flip a coin for every single ad to decide its destination.
+        
+        This approach guarantees every ad is assigned exactly once, requiring repair 
+        only for empty campaigns.
         """
+        # 1. Check crossover probability
         if random.random() > self.crossover_rate:
             return deepcopy(parent1), deepcopy(parent2)
-        
-        if self.num_campaigns < 2:
-            return deepcopy(parent1), deepcopy(parent2)
 
-        # Randomly choose crossover strategy
-        strategy = random.choice(['single_point', 'uniform', 'ad_level'])
+        # 2. Create Inverse Mappings (Ad ID -> Campaign ID)
+        # We need to know the destination of every ad in both parents
+        p1_map = {}
+        for cid, ads in parent1.allocation.items():
+            for ad_id in ads:
+                p1_map[ad_id] = cid
+
+        p2_map = {}
+        for cid, ads in parent2.allocation.items():
+            for ad_id in ads:
+                p2_map[ad_id] = cid
+
+        # Initialize child mappings
+        child1_map = {}
+        child2_map = {}
+
+        # 3. Select Strategy
+        strategy = random.choice(['single_point', 'uniform'])
+        all_ads = self.ad_ids.copy()
         
         if strategy == 'single_point':
-            # Single-point crossover
-            split_point = random.randint(1, self.num_campaigns - 1)
-            campaigns_shuffled = self.campaign_ids.copy()
-            random.shuffle(campaigns_shuffled)
+            # Split the list of ADS (not campaigns)
+            if len(all_ads) > 1:
+                split_point = random.randint(1, len(all_ads) - 1)
+            else:
+                split_point = 0
             
-            group1 = campaigns_shuffled[:split_point]
-            group2 = campaigns_shuffled[split_point:]
-            
-            child1_allocation = {}
-            child2_allocation = {}
-            
-            for cid in group1:
-                child1_allocation[cid] = parent1.allocation[cid].copy()
-                child2_allocation[cid] = parent2.allocation[cid].copy()
-            
-            for cid in group2:
-                child1_allocation[cid] = parent2.allocation[cid].copy()
-                child2_allocation[cid] = parent1.allocation[cid].copy()
-        
-        elif strategy == 'uniform':
-            # Uniform crossover: randomly choose from each parent for each campaign
-            child1_allocation = {}
-            child2_allocation = {}
-            
-            for cid in self.campaign_ids:
-                if random.random() < 0.5:
-                    child1_allocation[cid] = parent1.allocation[cid].copy()
-                    child2_allocation[cid] = parent2.allocation[cid].copy()
+            for i, ad_id in enumerate(all_ads):
+                if i < split_point:
+                    child1_map[ad_id] = p1_map.get(ad_id)
+                    child2_map[ad_id] = p2_map.get(ad_id)
                 else:
-                    child1_allocation[cid] = parent2.allocation[cid].copy()
-                    child2_allocation[cid] = parent1.allocation[cid].copy()
-        
-        else:  # ad_level
-            # Ad-level crossover: mix ads at individual ad level
-            child1_allocation = {cid: [] for cid in self.campaign_ids}
-            child2_allocation = {cid: [] for cid in self.campaign_ids}
-            
-            # Collect all ads from both parents
-            all_ads_p1 = [(cid, ad_id) for cid in self.campaign_ids for ad_id in parent1.allocation[cid]]
-            all_ads_p2 = [(cid, ad_id) for cid in self.campaign_ids for ad_id in parent2.allocation[cid]]
-            
-            # Randomly mix
-            random.shuffle(all_ads_p1)
-            random.shuffle(all_ads_p2)
-            
-            split = len(all_ads_p1) // 2
-            child1_mix = all_ads_p1[:split] + all_ads_p2[split:]
-            child2_mix = all_ads_p2[:split] + all_ads_p1[split:]
-            
-            for cid, ad_id in child1_mix:
-                child1_allocation[cid].append(ad_id)
-            for cid, ad_id in child2_mix:
-                child2_allocation[cid].append(ad_id)
-        
+                    child1_map[ad_id] = p2_map.get(ad_id)
+                    child2_map[ad_id] = p1_map.get(ad_id)
+                    
+        else: # uniform
+            # For EACH ad, randomly decide which parent defines its destination
+            for ad_id in all_ads:
+                if random.random() < 0.5:
+                    child1_map[ad_id] = p1_map.get(ad_id)
+                    child2_map[ad_id] = p2_map.get(ad_id)
+                else:
+                    child1_map[ad_id] = p2_map.get(ad_id)
+                    child2_map[ad_id] = p1_map.get(ad_id)
+
+        # 4. Reconstruction: Transform Maps {Ad->Camp} back to Allocation {Camp->[Ads]}
+        child1_allocation = {cid: [] for cid in self.campaign_ids}
+        child2_allocation = {cid: [] for cid in self.campaign_ids}
+
+        # Populate Child 1
+        for ad_id, camp_id in child1_map.items():
+            # Fallback for safety: if camp_id is None (should not happen), pick random
+            if camp_id not in child1_allocation:
+                camp_id = random.choice(self.campaign_ids)
+            child1_allocation[camp_id].append(ad_id)
+
+        # Populate Child 2
+        for ad_id, camp_id in child2_map.items():
+            if camp_id not in child2_allocation:
+                camp_id = random.choice(self.campaign_ids)
+            child2_allocation[camp_id].append(ad_id)
+
+        # 5. Repair constraints (specifically empty campaigns)
         child1_allocation = self._repair_allocation(child1_allocation)
         child2_allocation = self._repair_allocation(child2_allocation)
         
-        child1 = Individual(allocation=child1_allocation)
-        child2 = Individual(allocation=child2_allocation)
-        
-        return child1, child2
-    
+        return Individual(allocation=child1_allocation), Individual(allocation=child2_allocation)
+
     def _repair_allocation(self, allocation: Dict[int, List[int]]) -> Dict[int, List[int]]:
         """
-        Repairs an allocation to ensure:
-        1. All ads are present exactly once.
-        2. Every campaign has at least one ad.
+        Repairs the allocation to ensure every campaign has at least one ad.
+        
         """
-        if not self.campaign_ids or not self.ad_ids:
-            return {cid: [] for cid in self.campaign_ids}
+        # Identify empty campaigns
+        empty_campaigns = [cid for cid in self.campaign_ids if not allocation[cid]]
+        
+        if not empty_campaigns:
+            return allocation
 
-        new_allocation = {cid: [] for cid in self.campaign_ids}
-        used_ads = set()
-        
-        for cid in self.campaign_ids:
-            if cid in allocation:
-                for ad_id in allocation[cid]:
-                    if ad_id not in used_ads:
-                        new_allocation[cid].append(ad_id)
-                        used_ads.add(ad_id)
-        
-        all_ads_set = set(self.ad_ids)
-        missing_ads = list(all_ads_set - used_ads)
-        
-        for ad_id in missing_ads:
-            target_cid = random.choice(self.campaign_ids)
-            new_allocation[target_cid].append(ad_id)
-            used_ads.add(ad_id)
-        
-        for cid in self.campaign_ids:
-            while not new_allocation[cid]:
-                candidate_donors = [c for c in self.campaign_ids if len(new_allocation[c]) > 1]
-                if candidate_donors:
-                    donor_cid = random.choice(candidate_donors)
-                    ad_to_move = new_allocation[donor_cid].pop()
-                    new_allocation[cid].append(ad_to_move)
-                else:
-                    break 
-        
-        return new_allocation
+        # For each empty campaign, steal an ad from a campaign that has > 1 ad
+        for empty_cid in empty_campaigns:
+            # Find potential donors (campaigns with more than 1 ad)
+            # We refresh this list in every iteration to reflect recent moves
+            donors = [cid for cid in self.campaign_ids if len(allocation[cid]) > 1]
+            
+            if not donors:
+                # Critical edge case: More campaigns than ads, or perfectly distributed 1-1-1
+                # Cannot solve the constraint without violating the 'unique ad' rule.
+                break
+                
+            # Randomly select a donor and move one ad to the empty campaign
+            donor_cid = random.choice(donors)
+            ad_to_move = allocation[donor_cid].pop()
+            allocation[empty_cid].append(ad_to_move)
+            
+        return allocation
     
     def calculate_population_diversity(self) -> float:
         """
@@ -644,7 +641,7 @@ class GeneticAlgorithm:
             return None
         
         if verbose:
-            print(f"\nExecutando {self.max_generations} gerações do GA...")
+            print(f"\A executar {self.max_generations} gerações do GA...")
             print(f"Campanhas: {self.num_campaigns}, Anúncios: {self.num_ads}")
             print("-" * 70)
         
