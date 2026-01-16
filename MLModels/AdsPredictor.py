@@ -9,7 +9,7 @@ from Classes.models import Ad
 
 # --- 1. Carregar o Modelo ---
 try:
-    MODEL = joblib.load('modelo.joblib') 
+    MODEL = joblib.load('src\models\Exp4_User_LightGBM_Opt_R2-0.773_20260116_1711.joblib') 
     print("Modelo ML carregado com sucesso.")
 except Exception as e:
     print(f"ERRO CRÍTICO: Não foi possível carregar o modelo. {e}")
@@ -18,21 +18,27 @@ except Exception as e:
 # --- 2. Definições e Mapeamentos ---
 
 # Lista exata de colunas que o modelo espera (na mesma ordem)
-COLUNAS_MODELO = [
-    'click_through_rate', 'view_time', 'cost_per_click', 'ROI', 
-    'hour_of_day', 'day_of_week', 'day_of_month', 'month', 
-    'is_month_start', 'is_month_end', 'is_weekend', 'time_of_day', 
-    'is_holiday', 'age_group_encoded', 'engagement_level_encoded', 
-    'device_type_Mobile', 'device_type_Tablet', 
-    'location_Germany', 'location_India', 'location_UK', 'location_USA', 
-    'gender_Male', 
-    'content_type_Text', 'content_type_Video', 
-    'ad_topic_Electronics', 'ad_topic_Entertainment', 'ad_topic_Fashion', 
-    'ad_topic_Finance', 'ad_topic_Food', 'ad_topic_Health', 'ad_topic_Travel', 
-    'ad_target_audience_Fitness Lovers', 'ad_target_audience_Professionals', 
-    'ad_target_audience_Students', 'ad_target_audience_Tech Enthusiasts', 
-    'ad_target_audience_Travel Lovers', 'ad_target_audience_Young Adults'
-]
+# COLUNAS_MODELO = [
+#     'click_through_rate', 'view_time', 'cost_per_click', 'ROI', 
+#     'hour_of_day', 'day_of_week', 'day_of_month', 'month', 
+#     'is_month_start', 'is_month_end', 'is_weekend', 'time_of_day', 
+#     'is_holiday', 'age_group_encoded', 'engagement_level_encoded', 
+#     'device_type_Mobile', 'device_type_Tablet', 
+#     'location_Germany', 'location_India', 'location_UK', 'location_USA', 
+#     'gender_Male', 
+#     'content_type_Text', 'content_type_Video', 
+#     'ad_topic_Electronics', 'ad_topic_Entertainment', 'ad_topic_Fashion', 
+#     'ad_topic_Finance', 'ad_topic_Food', 'ad_topic_Health', 'ad_topic_Travel', 
+#     'ad_target_audience_Fitness Lovers', 'ad_target_audience_Professionals', 
+#     'ad_target_audience_Students', 'ad_target_audience_Tech Enthusiasts', 
+#     'ad_target_audience_Travel Lovers', 'ad_target_audience_Young Adults'
+# ]
+
+
+COLUNAS_MODELO = ['age_group_encoded', 'engagement_level_encoded', 'device_type_Tablet', 
+                 'location_Germany', 'location_India', 'content_type_Text', 
+                 'content_type_Video', 'ad_topic_Finance', 
+                 'ad_target_audience_Professionals', 'ad_target_audience_Students']
 
 
 AGE_MAP = {
@@ -120,57 +126,57 @@ def predict_ads_conversion_rates_ml(ads: List[Ad]) -> List[Ad]:
 
         # --- CONSTRUÇÃO DO DICIONÁRIO ---
         row = {
-            'click_through_rate': ad.click_through_rate,
-            'view_time': ad.view_time,
-            'cost_per_click': ad.cost_per_click,
-            'ROI': ad.roi,
+            # 'click_through_rate': ad.click_through_rate,
+            # 'view_time': ad.view_time,
+            # 'cost_per_click': ad.cost_per_click,
+            # 'ROI': ad.roi,
 
-            # Features Temporais Calculadas
-            'hour_of_day': hour,
-            'day_of_week': day_of_week,
-            'day_of_month': day_of_month,
-            'month': month,
-            'is_month_start': is_month_start,
-            'is_month_end': is_month_end,
-            'is_weekend': is_weekend,
-            'time_of_day': time_of_day_val,
-            'is_holiday': is_holiday_val,
+            # # Features Temporais Calculadas
+            # 'hour_of_day': hour,
+            # 'day_of_week': day_of_week,
+            # 'day_of_month': day_of_month,
+            # 'month': month,
+            # 'is_month_start': is_month_start,
+            # 'is_month_end': is_month_end,
+            # 'is_weekend': is_weekend,
+            # 'time_of_day': time_of_day_val,
+            # 'is_holiday': is_holiday_val,
             
-            # Label Encodings
+            # # Label Encodings
             'age_group_encoded': AGE_MAP.get(ad.age_group, 0),
             'engagement_level_encoded': ENGAGEMENT_MAP.get(ad.engagement_level, 0),
 
-            # One-Hot Encoding Manual (0 ou 1)
-            # Nota: 'Canada' ou outros países não listados no modelo ficarão todos 0
-            'device_type_Mobile': 1 if ad.device_type == 'Mobile' else 0,
+            # # One-Hot Encoding Manual (0 ou 1)
+            # # Nota: 'Canada' ou outros países não listados no modelo ficarão todos 0
+            # 'device_type_Mobile': 1 if ad.device_type == 'Mobile' else 0,
             'device_type_Tablet': 1 if ad.device_type == 'Tablet' else 0,
             
             'location_Germany': 1 if ad.location == 'Germany' else 0,
             'location_India': 1 if ad.location == 'India' else 0,
-            'location_UK': 1 if ad.location == 'UK' else 0,
-            'location_USA': 1 if ad.location == 'USA' else 0,
+            # 'location_UK': 1 if ad.location == 'UK' else 0,
+            # 'location_USA': 1 if ad.location == 'USA' else 0,
             
-            'gender_Male': 1 if ad.gender == 'Male' else 0,
+            # 'gender_Male': 1 if ad.gender == 'Male' else 0,
             
             'content_type_Text': 1 if ad.content_type == 'Text' else 0,
             'content_type_Video': 1 if ad.content_type == 'Video' else 0,
             
-            # Ad Topics
-            'ad_topic_Electronics': 1 if ad.ad_topic == 'Electronics' else 0,
-            'ad_topic_Entertainment': 0, # Se não houver no input Ad, assume 0
-            'ad_topic_Fashion': 1 if ad.ad_topic == 'Fashion' else 0,
-            'ad_topic_Finance': 0,
-            'ad_topic_Food': 0,
-            'ad_topic_Health': 1 if ad.ad_topic == 'Health' else 0,
-            'ad_topic_Travel': 1 if ad.ad_topic == 'Travel' else 0,
+            # # Ad Topics
+            # 'ad_topic_Electronics': 1 if ad.ad_topic == 'Electronics' else 0,
+            # 'ad_topic_Entertainment': 0, # Se não houver no input Ad, assume 0
+            # 'ad_topic_Fashion': 1 if ad.ad_topic == 'Fashion' else 0,
+            'ad_topic_Finance': 1 if ad.ad_topic == 'Finance' else 0,
+            # 'ad_topic_Food': 0,
+            # 'ad_topic_Health': 1 if ad.ad_topic == 'Health' else 0,
+            # 'ad_topic_Travel': 1 if ad.ad_topic == 'Travel' else 0,
             
-            # Target Audiences
-            'ad_target_audience_Fitness Lovers': 1 if ad.ad_target_audience == 'Fitness Lovers' else 0,
-            'ad_target_audience_Professionals': 1 if ad.ad_target_audience == 'Busy Professionals' else 0,
-            'ad_target_audience_Students': 0,
-            'ad_target_audience_Tech Enthusiasts': 1 if ad.ad_target_audience == 'Tech Enthusiasts' else 0,
-            'ad_target_audience_Travel Lovers': 1 if ad.ad_target_audience == 'Travel Lovers' else 0,
-            'ad_target_audience_Young Adults': 1 if ad.ad_target_audience == 'Young Adults' else 0,
+            # # Target Audiences
+            # 'ad_target_audience_Fitness Lovers': 1 if ad.ad_target_audience == 'Fitness Lovers' else 0,
+            'ad_target_audience_Professionals': 1 if ad.ad_target_audience == 'Professionals' else 0,
+            'ad_target_audience_Students': 1 if ad.ad_target_audience == 'Students' else 0,
+            # 'ad_target_audience_Tech Enthusiasts': 1 if ad.ad_target_audience == 'Tech Enthusiasts' else 0,
+            # 'ad_target_audience_Travel Lovers': 1 if ad.ad_target_audience == 'Travel Lovers' else 0,
+            # 'ad_target_audience_Young Adults': 1 if ad.ad_target_audience == 'Young Adults' else 0,
         }
         
         # Preencher colunas faltantes com 0 (segurança)
@@ -193,7 +199,9 @@ def predict_ads_conversion_rates_ml(ads: List[Ad]) -> List[Ad]:
             for i, ad in enumerate(ads):
                 # Arredondar e garantir que é float python (não numpy float)
                 ad.conversion_rate = round(float(predictions[i]), 4)
-                
+                print(f"Conversion Rate previsto para Ad ID {ad.id}: {ad.conversion_rate}")
+
+                    
         except Exception as e:
             print(f"Erro durante o predict: {e}")
 

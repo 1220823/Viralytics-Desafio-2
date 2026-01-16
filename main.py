@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+import pandas as pd
 
 # Import the main orchestration function from genetic_algorithm_core
 from Genetic_Algorithm.geneticAlgorithm import Individual, run_genetic_optimization
@@ -169,12 +170,13 @@ def predict_campaign_overcosts(campaigns: List[Campaign]) -> List[Campaign]:
     return campaigns
 
 def predict_ads_conversion_rates(ads: List[Ad]) -> List[Ad]:
-    """Generates random conversion rates for a list of ads."""
-    for ad in ads:
-        ad.conversion_rate = round(random.uniform(0.1, 0.4), 4)
-        # ad.conversion_rate = 0.4
+    # """Generates random conversion rates for a list of ads."""
+    # for ad in ads:
+    #     ad.conversion_rate = round(random.uniform(0.1, 0.4), 4)
+    #     # ad.conversion_rate = 0.4
 
-    return ads
+    # return ads
+    return predict_ads_conversion_rates_ml(ads)
 
 # --- 6. Additional Request Models ---
 class TabuSearchRequest(BaseModel):
@@ -226,11 +228,7 @@ class AlgorithmComparison(BaseModel):
 
 # --- 7. New Optimization Endpoints ---
 
-def optimize_tabu_core(request):
-    # Predict values
-    predicted_ads = predict_ads_conversion_rates(request.ads)
-    predicted_campaigns = predict_campaign_overcosts(request.campaigns)
-
+def optimize_tabu_core(request, predicted_ads, predicted_campaigns):
     best_solution = run_tabu_search_optimization(
         campaigns=predicted_campaigns,
         ads=predicted_ads,
@@ -272,7 +270,10 @@ async def optimize_with_tabu_search(request: TabuSearchRequest):
         raise HTTPException(status_code=400, detail="Total budget too low.")
 
     try:
-        return optimize_tabu_core(request)
+        # Predict values
+        predicted_ads = predict_ads_conversion_rates(request.ads)
+        predicted_campaigns = predict_campaign_overcosts(request.campaigns)
+        return optimize_tabu_core(request, predicted_ads, predicted_campaigns)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -287,7 +288,9 @@ async def run_tabu_experiments(request: TabuSearchRequest):
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"tabu_experiments_{timestamp}.csv"
-
+    predicted_ads = predict_ads_conversion_rates(request.ads)
+    predicted_campaigns = predict_campaign_overcosts(request.campaigns)
+    
     for i in range(100):
         print("Running tabu search experiment:", i+1)
 
@@ -298,7 +301,8 @@ async def run_tabu_experiments(request: TabuSearchRequest):
             setattr(experiment_request, key, value)
 
         try:
-            solution = optimize_tabu_core(experiment_request)
+            # Predict values
+            solution = optimize_tabu_core(experiment_request, predicted_ads, predicted_campaigns)
         except Exception as e:
             solution = None
 
