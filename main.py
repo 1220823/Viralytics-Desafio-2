@@ -171,12 +171,12 @@ def predict_campaign_overcosts(campaigns: List[Campaign]) -> List[Campaign]:
 
 def predict_ads_conversion_rates(ads: List[Ad]) -> List[Ad]:
     # """Generates random conversion rates for a list of ads."""
-    # for ad in ads:
-    #     ad.conversion_rate = round(random.uniform(0.1, 0.4), 4)
-    #     # ad.conversion_rate = 0.4
-
-    # return ads
-    return predict_ads_conversion_rates_ml(ads)
+    #for ad in ads:
+         #ad.conversion_rate = round(random.uniform(0.1, 0.2), 4)
+          #ad.conversion_rate = 0.2
+    ads = predict_ads_conversion_rates_ml(ads)
+    return ads
+    
 
 # --- 6. Additional Request Models ---
 class TabuSearchRequest(BaseModel):
