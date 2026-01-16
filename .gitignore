@@ -2,3 +2,5 @@
 /__pycache__
 /models
 *.pyc
+*.csv
+/src/models

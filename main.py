@@ -164,12 +164,16 @@ def predict_campaign_overcosts(campaigns: List[Campaign]) -> List[Campaign]:
     """Generates random overcost values for a list of campaigns."""
     for campaign in campaigns:
         campaign.overcost = round(random.uniform(-7000.0, 7000.0), 4)
+        # campaign.overcost = 7000.0
+
     return campaigns
 
 def predict_ads_conversion_rates(ads: List[Ad]) -> List[Ad]:
     """Generates random conversion rates for a list of ads."""
     for ad in ads:
         ad.conversion_rate = round(random.uniform(0.1, 0.4), 4)
+        # ad.conversion_rate = 0.4
+
     return ads
 
 # --- 6. Additional Request Models ---
@@ -222,48 +226,110 @@ class AlgorithmComparison(BaseModel):
 
 # --- 7. New Optimization Endpoints ---
 
-@app.post("/optimize_tabu_search", response_model=Optional[Individual], tags=["Optimization"])
-async def optimize_with_tabu_search(request: TabuSearchRequest):
-    """
-    Receives campaign and ad data and runs Tabu Search to find an optimal allocation.
-    """
-    if not request.campaigns or not request.ads:
-        raise HTTPException(status_code=400, detail="Campaigns and Ads lists cannot be empty.")
-    
-    # Validate total_budget against sum of approved budgets
-    total_approved_budgets = sum(campaign.approved_budget for campaign in request.campaigns)
-    if request.total_budget < total_approved_budgets:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Total budget (${request.total_budget:,.2f}) is less than the sum of approved budgets (${total_approved_budgets:,.2f}). Please increase the total budget to at least ${total_approved_budgets:,.2f}."
-        )
-    
+def optimize_tabu_core(request):
     # Predict values
     predicted_ads = predict_ads_conversion_rates(request.ads)
     predicted_campaigns = predict_campaign_overcosts(request.campaigns)
-    
-    try:
-        best_solution = run_tabu_search_optimization(
-            campaigns=predicted_campaigns,
-            ads=predicted_ads,
-            max_iterations=request.max_iterations,
-            tabu_tenure=request.tabu_tenure,
-            neighborhood_size=request.neighborhood_size,
-            total_budget=request.total_budget,
-            risk_factor=request.risk_factor,
-            use_aspiration=request.use_aspiration,
-            intensification_threshold=request.intensification_threshold,
-            diversification_threshold=request.diversification_threshold,
-            verbose=request.ts_verbose
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
-    if best_solution is None:
-        raise HTTPException(status_code=500, detail="Tabu Search failed to find a solution or encountered an internal error.")
-    
+
+    best_solution = run_tabu_search_optimization(
+        campaigns=predicted_campaigns,
+        ads=predicted_ads,
+        max_iterations=request.max_iterations,
+        tabu_tenure=request.tabu_tenure,
+        neighborhood_size=request.neighborhood_size,
+        total_budget=request.total_budget,
+        risk_factor=request.risk_factor,
+        use_aspiration=request.use_aspiration,
+        intensification_threshold=request.intensification_threshold,
+        diversification_threshold=request.diversification_threshold,
+        verbose=request.ts_verbose
+    )
+
     return best_solution
 
+import random
+
+def random_tabu_params():
+    return {
+        "max_iterations": random.randint(50, 300),
+        "tabu_tenure": random.randint(5, 30),
+        "neighborhood_size": random.randint(10, 100),
+        "total_budget": random.randint(50_000_000, 200_000_000),
+        "risk_factor": round(random.uniform(0.5, 2.0), 2),
+        "use_aspiration": random.choice([True, False]),
+        "intensification_threshold": random.randint(20, 100),
+        "diversification_threshold": random.randint(50, 200),
+        "ts_verbose": False
+    }
+
+@app.post("/optimize_tabu_search", response_model=Optional[Individual], tags=["Optimization"])
+async def optimize_with_tabu_search(request: TabuSearchRequest):
+    if not request.campaigns or not request.ads:
+        raise HTTPException(status_code=400, detail="Campaigns and Ads lists cannot be empty.")
+
+    total_approved_budgets = sum(c.approved_budget for c in request.campaigns)
+    if request.total_budget < total_approved_budgets:
+        raise HTTPException(status_code=400, detail="Total budget too low.")
+
+    try:
+        return optimize_tabu_core(request)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+import csv
+from datetime import datetime
+from copy import deepcopy
+
+@app.post("/optimize_tabu_search_experiments", tags=["Optimization"])
+async def run_tabu_experiments(request: TabuSearchRequest):
+    results = []
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"tabu_experiments_{timestamp}.csv"
+
+    for i in range(100):
+        print("Running tabu search experiment:", i+1)
+
+        random_params = random_tabu_params()
+
+        experiment_request = deepcopy(request)
+        for key, value in random_params.items():
+            setattr(experiment_request, key, value)
+
+        try:
+            solution = optimize_tabu_core(experiment_request)
+        except Exception as e:
+            solution = None
+
+        row = {
+            **random_params,
+            "fitness": getattr(solution, "fitness", None),
+            "total_roi": getattr(solution, "total_roi", None),
+            "total_cost": getattr(solution, "total_cost", None),
+            "total_media_cost": getattr(solution, "total_media_cost", None),
+            "total_media_revenue": getattr(solution, "total_media_revenue", None),
+        }
+
+        results.append(row)
+
+    # Sort results by fitness (descending)
+    results.sort(
+        key=lambda x: (x["fitness"] is None, x["fitness"]),
+        reverse=True
+    )
+
+    # Write CSV
+    with open(filename, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=results[0].keys())
+        writer.writeheader()
+        writer.writerows(results)
+
+    return {
+        "runs": 100,
+        "file": filename,
+        "message": "Tabu Search experiments completed successfully"
+    }
 
 @app.post("/compare_algorithms", response_model=AlgorithmComparison, tags=["Optimization"])
 async def compare_optimization_algorithms(request: ComparisonRequest):
