@@ -9,7 +9,7 @@ from src.Classes.models import Campaign
 
 # --- 1. Carregar o Modelo ---
 try:
-    MODEL = joblib.load("src/Model_Training/Trained_Models/Marketing/Marketing_Model_XGBoost_Opt_R2-0.609_20260117_1042.joblib") 
+    MODEL = joblib.load("src/Model_Training/Trained_Models/Marketing/Marketing_Model_XGBoost_Opt_R2-0.609_20260117_1754.joblib") 
     print("Modelo ML Campaigns carregado com sucesso.")
 except Exception as e:
     print(f"ERRO CRÍTICO: Não foi possível carregar o modelo. {e}")
@@ -17,13 +17,10 @@ except Exception as e:
 
 # --- 2. Definições e Mapeamentos ---
 
-COLUNAS_MODELO = ['no_of_days', 'approved_budget', 
-                 'ext_service_name_Facebook Ads', 'ext_service_name_Google Ads',
-                 'channel_name_Mobile', 'channel_name_Search',
-                 'search_tag_cat_Other',
-                 'search_tag_cat_Retargeting', 'search_tag_cat_Youtube',
-                 'start_month']
-    
+COLUNAS_MODELO = ['no_of_days', 'approved_budget', 'start_month', 
+                  'ext_service_name_Facebook Ads', 'ext_service_name_Google Ads', 
+                  'channel_name_Mobile', 'channel_name_Search', 'search_tag_cat_Other', 
+                  'search_tag_cat_Retargeting', 'search_tag_cat_Youtube']    
 
 # --- 3. Função Principal de Previsão ---
 
@@ -62,12 +59,12 @@ def predict_campaigns_overcosts_ml(campaigns: List[Campaign]) -> List[Campaign]:
         # 3. Fim de Semana
         # "is_weekend = 1 if x >= 5 else 0" (Sábado=5, Domingo=6)
         is_weekend = 1 if day_of_week >= 5 else 0
-        
 
         # --- CONSTRUÇÃO DO DICIONÁRIO ---
         row = {
             'no_of_days': campaign.no_of_days,
             'approved_budget': campaign.approved_budget,
+            'start_month': month,
             'ext_service_name_Facebook Ads': 1 if campaign.ext_service_name == 'Facebook Ads' else 0,
             'ext_service_name_Google Ads': 1 if campaign.ext_service_name == 'Google Ads' else 0,
             'channel_name_Mobile': 1 if campaign.channel_name == 'Mobile' else 0,
@@ -75,7 +72,6 @@ def predict_campaigns_overcosts_ml(campaigns: List[Campaign]) -> List[Campaign]:
             'search_tag_cat_Other': 1 if campaign.search_tag_cat == 'Other' else 0,
             'search_tag_cat_Retargeting': 1 if campaign.search_tag_cat == 'Retargeting' else 0,
             'search_tag_cat_Youtube': 1 if campaign.search_tag_cat == 'Youtube' else 0,
-            'start_month' : month
         }
         
         # Preencher colunas faltantes com 0 (segurança)
