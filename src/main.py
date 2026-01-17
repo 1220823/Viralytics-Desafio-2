@@ -28,7 +28,7 @@ def load_data_from_json():
     
     # Load Campaigns
     try:
-        with open('DB/campaigns.json', 'r') as lc:
+        with open('src/DB/campaigns.json', 'r') as lc:
             raw_campaigns = json.load(lc)
             campaigns_db = [Campaign(**c) for c in raw_campaigns]
         print(f"Loaded {len(campaigns_db)} campaigns successfully.")
@@ -39,7 +39,7 @@ def load_data_from_json():
 
     # Load Ads
     try:
-        with open('DB/ads.json', 'r') as la:
+        with open('src/DB/ads.json', 'r') as la:
             raw_ads = json.load(la)
             ads_db = [Ad(**a) for a in raw_ads]
         print(f"Loaded {len(ads_db)} ads successfully.")

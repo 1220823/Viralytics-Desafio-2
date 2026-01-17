@@ -9,7 +9,7 @@ from src.Classes.models import Ad
 
 # --- 1. Carregar o Modelo ---
 try:
-    MODEL = joblib.load('src\Model_Training\Trained_Models\Advertising_Model_LightGBM_Opt_R2-0.773_20260116_2358.joblib') 
+    MODEL = joblib.load("src/Model_Training/Trained_Models/Advertising/Advertising_Model_LightGBM_Opt_R2-0.773_20260117_0257.joblib") 
     print("Modelo ML carregado com sucesso.")
 except Exception as e:
     print(f"ERRO CRÍTICO: Não foi possível carregar o modelo. {e}")

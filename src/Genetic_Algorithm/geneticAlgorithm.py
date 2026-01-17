@@ -641,7 +641,7 @@ class GeneticAlgorithm:
             return None
         
         if verbose:
-            print(f"\A executar {self.max_generations} gerações do GA...")
+            print(f"A executar {self.max_generations} gerações do GA...")
             print(f"Campanhas: {self.num_campaigns}, Anúncios: {self.num_ads}")
             print("-" * 70)
         
