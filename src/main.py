@@ -21,6 +21,7 @@ campaigns_db: List[Campaign] = []
 ads_db: List[Ad] = []
 
 from src.Predictors.AdsPredictor import predict_ads_conversion_rates_ml 
+from src.Predictors.CampaignsPredictor import predict_campaigns_overcosts_ml
 
 def load_data_from_json():
     """Loads campaign and ad data from JSON files into the in-memory databases."""
@@ -163,10 +164,10 @@ async def optimize_marketing_allocation(request: OptimizationRequest):
 # --- 5. Prediction Logic ---
 def predict_campaign_overcosts(campaigns: List[Campaign]) -> List[Campaign]:
     """Generates random overcost values for a list of campaigns."""
-    for campaign in campaigns:
-        campaign.overcost = round(random.uniform(-7000.0, 7000.0), 4)
+    #for campaign in campaigns:
+        #campaign.overcost = round(random.uniform(-7000.0, 7000.0), 4)
         # campaign.overcost = 7000.0
-
+    campaigns = predict_campaigns_overcosts_ml(campaigns)
     return campaigns
 
 def predict_ads_conversion_rates(ads: List[Ad]) -> List[Ad]:

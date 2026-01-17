@@ -10,7 +10,7 @@ from src.Classes.models import Ad
 # --- 1. Carregar o Modelo ---
 try:
     MODEL = joblib.load("src/Model_Training/Trained_Models/Advertising/Advertising_Model_LightGBM_Opt_R2-0.773_20260117_0257.joblib") 
-    print("Modelo ML carregado com sucesso.")
+    print("Modelo ML Ads carregado com sucesso.")
 except Exception as e:
     print(f"ERRO CRÍTICO: Não foi possível carregar o modelo. {e}")
     MODEL = None
@@ -199,7 +199,7 @@ def predict_ads_conversion_rates_ml(ads: List[Ad]) -> List[Ad]:
             for i, ad in enumerate(ads):
                 # Arredondar e garantir que é float python (não numpy float)
                 ad.conversion_rate = round(float(predictions[i]), 4)
-                print(f"Conversion Rate previsto para Ad ID {ad.id}: {ad.conversion_rate}")
+                #print(f"Conversion Rate previsto para Ad ID {ad.id}: {ad.conversion_rate}")
 
                     
         except Exception as e:
