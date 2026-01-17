@@ -117,10 +117,10 @@ campaigns_data = generate_campaigns_data(num_campaigns_const)
 ads_data = generate_ads_data(num_ads_const)
 
 # Save to JSON files
-with open('DB/campaigns.json', 'w') as f:
+with open('src/DB/campaigns.json', 'w') as f:
     json.dump(campaigns_data, f, indent=4)
 
-with open('DB/ads.json', 'w') as f:
+with open('src/DB/ads.json', 'w') as f:
     json.dump(ads_data, f, indent=4)
 
 print("Generated campaigns.json and ads.json successfully!")
