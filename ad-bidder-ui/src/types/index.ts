@@ -104,10 +104,12 @@ export interface OptimizationResponse {
   };
   fitness: number;
   total_roi: number;
-  total_cost: number;
+  total_cost: number;  // Budget-related cost (not for profit calculation)
   total_revenue?: number; // Deprecated, use total_media_revenue
-  total_media_cost: number;
+  total_media_cost: number;  // Actual media spending
   total_media_revenue: number;
+  profit: number;  // Pre-calculated: total_media_revenue - total_media_cost
+  execution_time_seconds?: number;
   campaign_metrics: {
     [campaignId: string]: CampaignMetrics;
   };

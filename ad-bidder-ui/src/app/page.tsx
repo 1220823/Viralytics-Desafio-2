@@ -71,10 +71,6 @@ export default function Home() {
     return ads[apiId - 1]?._key; // Return the _key of the ad for scrolling
   };
 
-  const calculateNetProfit = (revenue: number, cost: number): number => {
-    return revenue - cost;
-  };
-
   const scrollToAd = (adKey: string) => {
     const element = document.getElementById(`ad-${adKey}`);
     if (element) {
@@ -1385,17 +1381,17 @@ export default function Home() {
                             </p>
                           </div>
                           <div className="p-4 bg-slate-50 rounded-lg">
-                            <p className="text-sm text-slate-500 mb-1">Total Cost</p>
-                            <p className="text-2xl font-semibold text-slate-900">${gaResults.total_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                            <p className="text-sm text-slate-500 mb-1">Media Cost</p>
+                            <p className="text-2xl font-semibold text-slate-900">${gaResults.total_media_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                           </div>
                           <div className="p-4 bg-slate-50 rounded-lg">
-                            <p className="text-sm text-slate-500 mb-1">Total Revenue</p>
+                            <p className="text-sm text-slate-500 mb-1">Media Revenue</p>
                             <p className="text-2xl font-semibold text-slate-900">${gaResults.total_media_revenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                           </div>
                           <div className="p-4 bg-slate-50 rounded-lg">
-                            <p className="text-sm text-slate-500 mb-1">Net Profit</p>
-                            <p className={`text-2xl font-semibold ${calculateNetProfit(gaResults.total_media_revenue, gaResults.total_cost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              ${calculateNetProfit(gaResults.total_media_revenue, gaResults.total_cost).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            <p className="text-sm text-slate-500 mb-1">Profit</p>
+                            <p className={`text-2xl font-semibold ${gaResults.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ${gaResults.profit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             </p>
                           </div>
                         </div>
@@ -1577,17 +1573,17 @@ export default function Home() {
                             </p>
                           </div>
                           <div className="p-4 bg-slate-50 rounded-lg">
-                            <p className="text-sm text-slate-500 mb-1">Total Cost</p>
-                            <p className="text-2xl font-semibold text-slate-900">${tsResults.total_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                            <p className="text-sm text-slate-500 mb-1">Media Cost</p>
+                            <p className="text-2xl font-semibold text-slate-900">${tsResults.total_media_cost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                           </div>
                           <div className="p-4 bg-slate-50 rounded-lg">
-                            <p className="text-sm text-slate-500 mb-1">Total Revenue</p>
+                            <p className="text-sm text-slate-500 mb-1">Media Revenue</p>
                             <p className="text-2xl font-semibold text-slate-900">${tsResults.total_media_revenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                           </div>
                           <div className="p-4 bg-slate-50 rounded-lg">
-                            <p className="text-sm text-slate-500 mb-1">Net Profit</p>
-                            <p className={`text-2xl font-semibold ${calculateNetProfit(tsResults.total_media_revenue, tsResults.total_cost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              ${calculateNetProfit(tsResults.total_media_revenue, tsResults.total_cost).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            <p className="text-sm text-slate-500 mb-1">Profit</p>
+                            <p className={`text-2xl font-semibold ${tsResults.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ${tsResults.profit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             </p>
                           </div>
                         </div>
@@ -1783,12 +1779,18 @@ export default function Home() {
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Total Cost:</span>
-                                <span className="text-sm font-semibold">${comparisonResults.ga_result.total_cost.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                <span className="text-sm text-slate-600">Media Cost:</span>
+                                <span className="text-sm font-semibold">${comparisonResults.ga_result.total_media_cost.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Total Revenue:</span>
+                                <span className="text-sm text-slate-600">Media Revenue:</span>
                                 <span className="text-sm font-semibold">${comparisonResults.ga_result.total_media_revenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-slate-600">Profit:</span>
+                                <span className={`text-sm font-semibold ${comparisonResults.ga_result.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  ${comparisonResults.ga_result.profit.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                                </span>
                               </div>
                             </div>
                           ) : (
@@ -1815,12 +1817,18 @@ export default function Home() {
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Total Cost:</span>
-                                <span className="text-sm font-semibold">${comparisonResults.ts_result.total_cost.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                                <span className="text-sm text-slate-600">Media Cost:</span>
+                                <span className="text-sm font-semibold">${comparisonResults.ts_result.total_media_cost.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Total Revenue:</span>
+                                <span className="text-sm text-slate-600">Media Revenue:</span>
                                 <span className="text-sm font-semibold">${comparisonResults.ts_result.total_media_revenue.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-slate-600">Profit:</span>
+                                <span className={`text-sm font-semibold ${comparisonResults.ts_result.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  ${comparisonResults.ts_result.profit.toLocaleString('en-US', {minimumFractionDigits: 2})}
+                                </span>
                               </div>
                             </div>
                           ) : (
