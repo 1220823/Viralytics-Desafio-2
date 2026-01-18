@@ -287,6 +287,7 @@ from copy import deepcopy
 
 @app.post("/optimize_tabu_search_experiments", tags=["Optimization"])
 async def run_tabu_experiments(request: TabuSearchRequest):
+
     results = []
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -349,10 +350,13 @@ async def compare_optimization_algorithms(request: ComparisonRequest):
     
     # Validate total_budget
     total_approved_budgets = sum(campaign.approved_budget for campaign in request.campaigns)
-    if request.total_budget < total_approved_budgets:
+    total_budget_rounded = round(request.total_budget, 2)
+    total_approved_rounded = round(total_approved_budgets, 2)
+
+    if total_budget_rounded < total_approved_rounded:
         raise HTTPException(
             status_code=400, 
-            detail=f"Total budget (${request.total_budget:,.2f}) is less than the sum of approved budgets (${total_approved_budgets:,.2f})."
+            detail=f"Total budget (${total_budget_rounded:,.2f}) is less than the sum of approved budgets (${total_approved_rounded:,.2f})."
         )
     
     # Predict values once (use same predictions for both algorithms)
@@ -813,3 +817,26 @@ async def multiple_comparisons(request: MultipleComparisonRequest):
         }
     else:
         raise HTTPException(status_code=500, detail="No results generated")
+
+@app.post("/best_runs", tags=["Best Runs"])
+async def run_tabu_experiments():
+    results_df = pd.read_csv(
+        "src/Algorithm_Comparisons/multiple_comparisons_results_20260118_182223.csv"
+    )
+
+    # Column indices (0-based)
+    col_2_idx = 1  # 2nd column
+    col_5_idx = 4  # 5th column
+
+    # Get top 10 rows by each column
+    top_10_col_2 = results_df.nlargest(10, results_df.columns[col_2_idx])
+    top_10_col_5 = results_df.nlargest(10, results_df.columns[col_5_idx])
+
+    # Optional: reset index for clean output
+    top_10_col_2 = top_10_col_2.reset_index(drop=True)
+    top_10_col_5 = top_10_col_5.reset_index(drop=True)
+
+    return {
+        "top_10_by_column_2": top_10_col_2.to_dict(orient="records"),
+        "top_10_by_column_5": top_10_col_5.to_dict(orient="records"),
+    }
