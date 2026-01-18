@@ -1,5 +1,7 @@
+from fileinput import filename
 import json
 from datetime import date, datetime
+import os
 import random
 import time
 from typing import List, Literal, Optional, Dict, Any
@@ -338,6 +340,7 @@ async def run_tabu_experiments(request: TabuSearchRequest):
 
 @app.post("/compare_algorithms", response_model=AlgorithmComparison, tags=["Optimization"])
 async def compare_optimization_algorithms(request: ComparisonRequest):
+    
     """
     Runs both Genetic Algorithm and Tabu Search on the same data and returns a comparison.
     """
@@ -507,3 +510,306 @@ async def compare_optimization_algorithms(request: ComparisonRequest):
         comparison=comparison,
         winner=winner
     )
+
+
+class MultipleComparisonRequest(BaseModel):
+    """Request model for running n iterations of GA vs Tabu Search comparison"""
+    n_iterations: int 
+    min_campaigns: int
+    max_campaigns: int
+    min_ads: int
+    max_ads: int
+
+def generate_random_subset_campaigns_ads(
+    min_campaigns: int,
+    max_campaigns: int,
+    min_ads: int,
+    max_ads: int
+) -> tuple[List[Campaign], List[Ad]]:
+    """Generate random subsets of campaigns and ads from the database"""
+    
+    # Determine random counts
+    n_campaigns = random.randint(min_campaigns, min(max_campaigns, len(campaigns_db)))
+    n_ads = random.randint(min_ads, min(max_ads, len(ads_db)))
+    
+    # Ensure we dont have more campaings that ads
+    n_campaigns = min(n_campaigns, n_ads)
+    
+    # Ensure we have enough data
+    if len(campaigns_db) < n_campaigns or len(ads_db) < n_ads:
+        raise ValueError(f"Not enough data in database. Have {len(campaigns_db)} campaigns and {len(ads_db)} ads.")
+    
+    # Select random subsets
+    selected_campaigns = random.sample(campaigns_db, n_campaigns)
+    selected_ads = random.sample(ads_db, n_ads)
+    
+    return selected_campaigns, selected_ads
+
+def generate_params(campaigns: List[Campaign]) -> dict:
+    #Total budget should be at least the sum of approved budgets
+    total_approved_budgets = sum(c.approved_budget for c in campaigns)
+    total_budget = random.uniform(total_approved_budgets * 1.1, total_approved_budgets * 1.5)
+
+    risk_factor = round(random.uniform(0, 2.0), 2)
+    pop_size = random.randint(10, 100)
+    max_gens = random.randint(20, 200)
+
+    mutation_rate = round(random.uniform(0.05, 0.3), 2)
+    crossover_rate = round(random.uniform(0.7, 0.95), 2)
+
+    tabu_tenure = random.randint(5, 30)
+    intensification_threshold = random.randint(20, 100)
+    diversification_threshold = random.randint(50, 200)
+
+    return {
+        "total_budget": total_budget,
+        "risk_factor": risk_factor,
+        "population_size": pop_size,
+        "max_generations": max_gens,
+        "mutation_rate": mutation_rate,
+        "crossover_rate": crossover_rate,
+        "tabu_tenure": tabu_tenure,
+        "intensification_threshold": intensification_threshold,
+        "diversification_threshold": diversification_threshold,
+        "ga_verbose": False,
+        "max_iterations": max_gens,
+        "tabu_tenure": tabu_tenure,
+        "neighborhood_size": pop_size,
+        "use_aspiration": True,
+        "intensification_threshold": intensification_threshold,
+        "diversification_threshold": diversification_threshold,
+        "ts_verbose": False
+    }
+
+@app.post("/multiple_comparisons", tags=["Optimization"])
+async def multiple_comparisons(request: MultipleComparisonRequest):
+    """
+    Run n iterations of GA vs Tabu Search comparison with random parameters.
+    Each iteration uses random subsets of campaigns/ads and random algorithm parameters.
+    Results are saved to a CSV file.
+    """
+    
+    if request.n_iterations <= 0:
+        raise HTTPException(status_code=400, detail="n_iterations must be positive.")
+    
+    directory_path = "src/Algorithm_Comparisons/"
+
+    # Create path if it doesn't exist
+    os.makedirs(directory_path, exist_ok=True)
+    
+    parameters_registered = []
+    results_registered = []
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    parameters_filename = f"{directory_path}multiple_comparisons_parameters_{timestamp}.csv"
+    results_filename = f"{directory_path}multiple_comparisons_results_{timestamp}.csv"
+    
+    print(f"\n{'='*80}")
+    print(f"Startim Comparisons: {request.n_iterations} iterations")
+    print(f"{'='*80}\n")
+    
+    for iteration in range(request.n_iterations):
+        print(f"\n{'='*80}")
+        print(f"Iteration {iteration + 1}/{request.n_iterations}")
+        print(f"{'='*80}")
+        
+        try:
+            # Generate random subsets
+            campaigns, ads = generate_random_subset_campaigns_ads(
+                request.min_campaigns,
+                request.max_campaigns,
+                request.min_ads,
+                request.max_ads
+            )
+            
+            # Generate random parameters
+            params = generate_params(campaigns)
+            
+            print(f"Campaigns: {len(campaigns)}, Ads: {len(ads)}")
+            print(f"Budget: ${params['total_budget']:,.2f}")
+            print(f"GA: pop={params['population_size']}, gen={params['max_generations']}")
+            print(f"Tabu: iter={params['max_iterations']}, tenure={params['tabu_tenure']}")
+            
+            # Predict values once for both algorithms
+            predicted_ads = predict_ads_conversion_rates(ads)
+            predicted_campaigns = predict_campaign_overcosts(campaigns)
+            
+            # Run Genetic Algorithm
+            print("\n--- Running GA ---")
+            ga_start = time.time()
+            ga_solution = None
+            ga_error = None
+            
+            try:
+                ga_solution = run_genetic_optimization(
+                    campaigns=predicted_campaigns,
+                    ads=predicted_ads,
+                    population_size=params["population_size"],
+                    max_generations=params["max_generations"],
+                    mutation_rate=params["mutation_rate"],
+                    crossover_rate=params["crossover_rate"],
+                    total_budget=params["total_budget"],
+                    risk_factor=params["risk_factor"],
+                    verbose=params["ga_verbose"]
+                )
+            except Exception as e:
+                ga_error = str(e)
+                print(f"GA Error: {ga_error}")
+            
+            ga_time = time.time() - ga_start
+            
+            # Run Tabu Search
+            print("\n--- Running Tabu Search ---")
+            ts_start = time.time()
+            ts_solution = None
+            ts_error = None
+            
+            try:
+                ts_solution = run_tabu_search_optimization(
+                    campaigns=predicted_campaigns,
+                    ads=predicted_ads,
+                    max_iterations=params["max_iterations"],
+                    tabu_tenure=params["tabu_tenure"],
+                    neighborhood_size=params["neighborhood_size"],
+                    total_budget=params["total_budget"],
+                    risk_factor=params["risk_factor"],
+                    use_aspiration=params["use_aspiration"],
+                    intensification_threshold=params["intensification_threshold"],
+                    diversification_threshold=params["diversification_threshold"],
+                    verbose=True
+                )
+            except Exception as e:
+                ts_error = str(e)
+                print(f"Tabu Search Error: {ts_error}")
+            
+            ts_time = time.time() - ts_start
+            
+            # Determine winner
+            winner = "Error"
+            roi_diff = 0
+            time_diff = 0
+            
+            if ga_solution and ts_solution:
+                ga_roi = ga_solution.total_roi
+                ts_roi = ts_solution.total_roi
+                roi_diff = ga_roi - ts_roi
+                time_diff = ga_time - ts_time
+                
+                if ga_roi > ts_roi:
+                    winner = "GA"
+                elif ts_roi > ga_roi:
+                    winner = "Tabu"
+                else:  # ROI is equal
+                    if ga_time < ts_time:
+                        winner = "GA"
+                    elif ts_time < ga_time:
+                        winner = "Tabu"
+                    else:
+                        winner = "Tie"
+            elif ga_solution:
+                winner = "GA"
+            elif ts_solution:
+                winner = "Tabu"
+            
+            # Record Parameters
+            parameters_record = {
+                "iteration": iteration + 1,
+                "n_campaigns": len(campaigns),
+                "n_ads": len(ads),
+                "total_budget": params["total_budget"],
+                "risk_factor": params["risk_factor"],
+                "ga_population_size": params["population_size"],
+                "ga_max_generations": params["max_generations"],
+                "ga_mutation_rate": params["mutation_rate"],
+                "ga_crossover_rate": params["crossover_rate"],
+                "tabu_max_iterations": params["max_iterations"],
+                "tabu_tenure": params["tabu_tenure"],
+                "tabu_neighborhood_size": params["neighborhood_size"],
+                "tabu_use_aspiration": params["use_aspiration"],
+                "tabu_intensification_threshold": params["intensification_threshold"],
+                "tabu_diversification_threshold": params["diversification_threshold"],
+            }
+
+            # Record results
+            result_row = {
+                # GA results
+                "ga_fitness": ga_solution.fitness if ga_solution else None,
+                "ga_total_roi": ga_solution.total_roi if ga_solution else None,
+                "ga_execution_time": ga_time,
+                
+                # Tabu results
+                "tabu_fitness": ts_solution.fitness if ts_solution else None,
+                "tabu_total_roi": ts_solution.total_roi if ts_solution else None,
+                "tabu_execution_time": ts_time,
+                
+                # Comparison
+                "roi_difference": roi_diff,
+                "time_difference": time_diff,
+                "winner": winner
+            }
+            
+            parameters_registered.append(parameters_record)
+            results_registered.append(result_row)
+            
+            print(f"\n--- Iteration {iteration + 1} Summary ---")
+            print(f"GA ROI: {ga_solution.total_roi:.4f}" if ga_solution else "GA: Failed")
+            print(f"Tabu ROI: {ts_solution.total_roi:.4f}" if ts_solution else "Tabu: Failed")
+            print(f"Winner: {winner}")
+            print(f"GA Time: {ga_time:.2f}s | Tabu Time: {ts_time:.2f}s")
+            
+        except Exception as e:
+            print(f"Error in iteration {iteration + 1}: {str(e)}")
+            # Still record the failed iteration
+            parameters_registered.append({
+                "iteration": iteration + 1,
+                "error": str(e)
+            })
+            results_registered.append({
+                "iteration": iteration + 1,
+                "error": str(e),
+                "winner": "Error"
+            })
+    
+    # Write results to CSV
+    if parameters_registered:
+        with open(parameters_filename, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=parameters_registered[0].keys())
+            writer.writeheader()
+            writer.writerows(parameters_registered)
+        print(f"Parameters saved to: {parameters_filename}")
+
+    if results_registered:
+        with open(results_filename, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=results_registered[0].keys())
+            writer.writeheader()
+            writer.writerows(results_registered)
+        
+        # Calculate summary statistics
+        successful_runs = [r for r in results_registered if r.get("winner") not in ["Error", None]]
+        ga_wins = sum(1 for r in successful_runs if r["winner"] == "GA")
+        tabu_wins = sum(1 for r in successful_runs if r["winner"] == "Tabu")
+        ties = sum(1 for r in successful_runs if r["winner"] == "Tie")
+        
+        print(f"\n{'='*80}")
+        print("BENCHMARK COMPLETE")
+        print(f"{'='*80}")
+        print(f"Total iterations: {request.n_iterations}")
+        print(f"Successful runs: {len(successful_runs)}")
+        print(f"GA wins: {ga_wins}")
+        print(f"Tabu wins: {tabu_wins}")
+        print(f"Ties: {ties}")
+        print(f"Parameters saved to: {parameters_filename}")
+        print(f"Results saved to: {results_filename}")
+        print(f"{'='*80}\n")
+        
+        return {
+            "total_iterations": request.n_iterations,
+            "successful_runs": len(successful_runs),
+            "ga_wins": ga_wins,
+            "tabu_wins": tabu_wins,
+            "ties": ties,
+            "parameters_filename": parameters_filename,
+            "results_filename": results_filename,
+            "message": "Benchmark completed successfully"
+        }
+    else:
+        raise HTTPException(status_code=500, detail="No results generated")
