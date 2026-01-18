@@ -442,11 +442,11 @@ async def compare_optimization_algorithms(request: ComparisonRequest):
     # Determine winner and create comparison
     if ga_result and ts_result:
         # Compare based on fitness
-        if ga_result["fitness"] > ts_result["fitness"]:
+        if ga_result["total_roi"] > ts_result["total_roi"]:
             winner = "Genetic Algorithm"
             fitness_diff = ga_result["fitness"] - ts_result["fitness"]
             roi_diff = ga_result["total_roi"] - ts_result["total_roi"]
-        elif ts_result["fitness"] > ga_result["fitness"]:
+        elif ts_result["total_roi"] > ga_result["total_roi"]:
             winner = "Tabu Search"
             fitness_diff = ts_result["fitness"] - ga_result["fitness"]
             roi_diff = ts_result["total_roi"] - ga_result["total_roi"]
