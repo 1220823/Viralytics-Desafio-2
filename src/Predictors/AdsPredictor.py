@@ -9,7 +9,7 @@ from src.Classes.models import Ad
 
 # --- 1. Carregar o Modelo ---
 try:
-    MODEL = joblib.load("src/Model_Training/Trained_Models/Advertising/Advertising_Model_RandomForest_Opt_R2-0.749_20260117_1729.joblib") 
+    MODEL = joblib.load("src/Model_Training/Trained_Models/Advertising/Advertising_LightGBM_Optimized_R2-0.771_20260118_1509.joblib") 
     print("Modelo ML Ads carregado com sucesso.")
 except Exception as e:
     print(f"ERRO CRÍTICO: Não foi possível carregar o modelo. {e}")
@@ -17,16 +17,11 @@ except Exception as e:
 
 # --- 2. Definições e Mapeamentos ---
 
-COLUNAS_MODELO = ['hour_of_day', 'day_of_week', 'day_of_month', 'month', 
-                  'is_month_start', 'is_month_end', 'is_weekend', 
-                  'time_of_day', 'is_holiday', 'age_group_encoded', 
-                  'engagement_level_encoded','device_type_Mobile', 
-                  'device_type_Tablet', 'location_Germany', 
-                  'location_India', 'location_UK', 
-                  'location_USA', 'gender_Male', 
-                  'content_type_Text', 'content_type_Video', 
-                  'ad_topic_Electronics', 'ad_topic_Entertainment',
-                  'ad_topic_Fashion', 'ad_topic_Finance', 
+COLUNAS_MODELO = ['time_of_day', 'age_group_encoded', 'engagement_level_encoded', 
+                  'device_type_Mobile', 'device_type_Tablet', 'location_Germany', 
+                  'location_India', 'location_UK', 'location_USA', 'gender_Male', 
+                  'content_type_Text', 'content_type_Video', 'ad_topic_Electronics', 
+                  'ad_topic_Entertainment', 'ad_topic_Fashion', 'ad_topic_Finance', 
                   'ad_topic_Food', 'ad_topic_Health', 'ad_topic_Travel', 
                   'ad_target_audience_Fitness_Lovers', 'ad_target_audience_Professionals', 
                   'ad_target_audience_Students', 'ad_target_audience_Tech_Enthusiasts', 
@@ -115,20 +110,10 @@ def predict_ads_conversion_rates_ml(ads: List[Ad]) -> List[Ad]:
         
         # 5. Feriados (Usando biblioteca holidays)
         is_holiday_val = is_holiday_check(dt, ad.location)
-
+        
         # --- CONSTRUÇÃO DO DICIONÁRIO ---
         row = {
-            # Features Temporais Calculadas
-            'hour_of_day': hour,
-            'day_of_week': day_of_week,
-            'day_of_month': day_of_month,
-            'month': month,
-            'is_month_start': is_month_start,
-            'is_month_end': is_month_end,
-            'is_weekend': is_weekend,
             'time_of_day': time_of_day_val,
-            'is_holiday': is_holiday_val,
-            # Label Encodings
             'age_group_encoded': AGE_MAP.get(ad.age_group, 0),
             'engagement_level_encoded': ENGAGEMENT_MAP.get(ad.engagement_level, 0),
             # One-Hot Encoding Manual (0 ou 1)
