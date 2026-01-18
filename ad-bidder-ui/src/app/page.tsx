@@ -171,27 +171,33 @@ export default function Home() {
     }
   };
 
-  const handleSelectCampaign = (item: Campaign | Ad) => {
-    const campaign = item as Campaign;
-    // Keep the original ID from the API, add unique _key, ensure overcost field exists
-    setCampaigns([...campaigns, {
-      ...campaign,
-      _key: generateUniqueKey('campaign'),
-      overcost: campaign.overcost ?? 0
-    }]);
-    setShowCampaignModal(false);
+  const handleSelectCampaigns = (items: (Campaign | Ad)[]) => {
+    const newCampaigns = items.map(item => {
+      const campaign = item as Campaign;
+      return {
+        ...campaign,
+        _key: generateUniqueKey('campaign'),
+        overcost: campaign.overcost ?? 0
+      };
+    });
+    setCampaigns([...campaigns, ...newCampaigns]);
   };
 
-  const handleSelectAd = (item: Campaign | Ad) => {
-    const ad = item as Ad;
-    // Keep the original ID from the API, add unique _key, ensure conversion_rate field exists
-    setAds([...ads, {
-      ...ad,
-      _key: generateUniqueKey('ad'),
-      conversion_rate: ad.conversion_rate ?? 0
-    }]);
-    setShowAdModal(false);
+  const handleSelectAds = (items: (Campaign | Ad)[]) => {
+    const newAds = items.map(item => {
+      const ad = item as Ad;
+      return {
+        ...ad,
+        _key: generateUniqueKey('ad'),
+        conversion_rate: ad.conversion_rate ?? 0
+      };
+    });
+    setAds([...ads, ...newAds]);
   };
+
+  // Get IDs of already-added items (for filtering in the modal)
+  const existingCampaignIds = campaigns.filter(c => c.id !== undefined).map(c => c.id as number);
+  const existingAdIds = ads.filter(a => a.id !== undefined).map(a => a.id as number);
 
   // Validation helper function
   const validateOptimizationInputs = (): boolean => {
@@ -607,6 +613,21 @@ export default function Home() {
             <p className="text-slate-500 mt-1">
               Configure your parameters to generate optimized bidding strategies.
             </p>
+          </div>
+          {/* Debug Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={testHealthCheck}
+              className="px-3 py-1 text-xs text-slate-500 border border-slate-300 rounded hover:bg-slate-100"
+            >
+              Test API
+            </button>
+            <button
+              onClick={testMockData}
+              className="px-3 py-1 text-xs text-slate-500 border border-slate-300 rounded hover:bg-slate-100"
+            >
+              Fetch All Data
+            </button>
           </div>
         </div>
 
@@ -1294,22 +1315,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Debug Buttons */}
-        <div className="flex justify-center gap-2 pt-4">
-          <button
-            onClick={testHealthCheck}
-            className="px-3 py-1 text-xs text-slate-500 border border-slate-300 rounded hover:bg-slate-100"
-          >
-            Test API
-          </button>
-          <button
-            onClick={testMockData}
-            className="px-3 py-1 text-xs text-slate-500 border border-slate-300 rounded hover:bg-slate-100"
-          >
-            Fetch All Data
-          </button>
-        </div>
-
         {/* Results Section */}
         {(gaResults || tsResults || comparisonResults) && (
           <section className="space-y-4">
@@ -1394,6 +1399,14 @@ export default function Home() {
                               ${gaResults.profit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             </p>
                           </div>
+                          {gaResults.execution_time_seconds !== undefined && (
+                            <div className="p-4 bg-slate-50 rounded-lg">
+                              <p className="text-sm text-slate-500 mb-1">Execution Time</p>
+                              <p className="text-2xl font-semibold text-slate-900">
+                                {gaResults.execution_time_seconds.toFixed(3)}s
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1586,6 +1599,14 @@ export default function Home() {
                               ${tsResults.profit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                             </p>
                           </div>
+                          {tsResults.execution_time_seconds !== undefined && (
+                            <div className="p-4 bg-slate-50 rounded-lg">
+                              <p className="text-sm text-slate-500 mb-1">Execution Time</p>
+                              <p className="text-2xl font-semibold text-slate-900">
+                                {tsResults.execution_time_seconds.toFixed(3)}s
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1792,6 +1813,12 @@ export default function Home() {
                                   ${comparisonResults.ga_result.profit.toLocaleString('en-US', {minimumFractionDigits: 2})}
                                 </span>
                               </div>
+                              {comparisonResults.ga_result.execution_time_seconds !== undefined && (
+                                <div className="flex justify-between pt-2 border-t border-slate-200 mt-2">
+                                  <span className="text-sm text-slate-600">Execution Time:</span>
+                                  <span className="text-sm font-semibold">{comparisonResults.ga_result.execution_time_seconds.toFixed(3)}s</span>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <p className="text-sm text-slate-500">No results</p>
@@ -1830,12 +1857,78 @@ export default function Home() {
                                   ${comparisonResults.ts_result.profit.toLocaleString('en-US', {minimumFractionDigits: 2})}
                                 </span>
                               </div>
+                              {comparisonResults.ts_result.execution_time_seconds !== undefined && (
+                                <div className="flex justify-between pt-2 border-t border-slate-200 mt-2">
+                                  <span className="text-sm text-slate-600">Execution Time:</span>
+                                  <span className="text-sm font-semibold">{comparisonResults.ts_result.execution_time_seconds.toFixed(3)}s</span>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <p className="text-sm text-slate-500">No results</p>
                           )}
                         </div>
                       </div>
+
+                      {/* Comparison Details */}
+                      {comparisonResults.comparison && Object.keys(comparisonResults.comparison).length > 0 && (
+                        <div className="p-4 bg-slate-50 rounded-xl">
+                          <h4 className="text-md font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-slate-500 text-[20px]">analytics</span>
+                            Comparison Details
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {comparisonResults.comparison.fitness_difference !== undefined && (
+                              <div className="p-3 bg-white rounded-lg border border-slate-200">
+                                <p className="text-xs text-slate-500 mb-1">Fitness Difference</p>
+                                <p className="text-lg font-semibold text-slate-900">
+                                  {comparisonResults.comparison.fitness_difference.toFixed(6)}
+                                </p>
+                              </div>
+                            )}
+                            {comparisonResults.comparison.roi_difference_percentage !== undefined && (
+                              <div className="p-3 bg-white rounded-lg border border-slate-200">
+                                <p className="text-xs text-slate-500 mb-1">ROI Difference</p>
+                                <p className="text-lg font-semibold text-slate-900">
+                                  {comparisonResults.comparison.roi_difference_percentage.toFixed(2)}%
+                                </p>
+                              </div>
+                            )}
+                            {comparisonResults.comparison.faster_algorithm && (
+                              <div className="p-3 bg-white rounded-lg border border-slate-200">
+                                <p className="text-xs text-slate-500 mb-1">Faster Algorithm</p>
+                                <p className="text-lg font-semibold text-slate-900">
+                                  {comparisonResults.comparison.faster_algorithm}
+                                </p>
+                              </div>
+                            )}
+                            {comparisonResults.comparison.time_difference !== undefined && (
+                              <div className="p-3 bg-white rounded-lg border border-slate-200">
+                                <p className="text-xs text-slate-500 mb-1">Time Difference</p>
+                                <p className="text-lg font-semibold text-slate-900">
+                                  {comparisonResults.comparison.time_difference.toFixed(3)}s
+                                </p>
+                              </div>
+                            )}
+                            {comparisonResults.comparison.ga_execution_time !== undefined && (
+                              <div className="p-3 bg-white rounded-lg border border-slate-200">
+                                <p className="text-xs text-slate-500 mb-1">GA Execution Time</p>
+                                <p className="text-lg font-semibold text-slate-900">
+                                  {comparisonResults.comparison.ga_execution_time.toFixed(3)}s
+                                </p>
+                              </div>
+                            )}
+                            {comparisonResults.comparison.ts_execution_time !== undefined && (
+                              <div className="p-3 bg-white rounded-lg border border-slate-200">
+                                <p className="text-xs text-slate-500 mb-1">TS Execution Time</p>
+                                <p className="text-lg font-semibold text-slate-900">
+                                  {comparisonResults.comparison.ts_execution_time.toFixed(3)}s
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Detailed results note */}
                       <div className="text-center text-sm text-slate-500 pt-4 border-t border-slate-200">
@@ -1860,21 +1953,23 @@ export default function Home() {
       <LoadModal
         isOpen={showCampaignModal}
         onClose={() => setShowCampaignModal(false)}
-        title="Load Campaign from Database"
+        title="Load Campaigns from Database"
         items={loadedCampaigns}
         type="campaign"
-        onSelect={handleSelectCampaign}
+        onSelect={handleSelectCampaigns}
         isLoading={isLoadingCampaigns}
+        existingIds={existingCampaignIds}
       />
 
       <LoadModal
         isOpen={showAdModal}
         onClose={() => setShowAdModal(false)}
-        title="Load Ad from Database"
+        title="Load Ads from Database"
         items={loadedAds}
         type="ad"
-        onSelect={handleSelectAd}
+        onSelect={handleSelectAds}
         isLoading={isLoadingAds}
+        existingIds={existingAdIds}
       />
     </div>
   );
