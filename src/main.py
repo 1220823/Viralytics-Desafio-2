@@ -427,10 +427,10 @@ async def compare_optimization_algorithms(request: ComparisonRequest):
             ts_result = {
                 "fitness": ts_solution.fitness,
                 "total_roi": ts_solution.total_roi,
-                "total_cost": ga_solution.total_cost,
-                "total_media_revenue": ga_solution.total_media_revenue,
-                "total_media_cost": ga_solution.total_media_cost,
-                "profit": ga_solution.total_media_revenue - ga_solution.total_media_cost,
+                "total_cost": ts_solution.total_cost,
+                "total_media_revenue": ts_solution.total_media_revenue,
+                "total_media_cost": ts_solution.total_media_cost,
+                "profit": ts_solution.total_media_revenue - ts_solution.total_media_cost,
                 "execution_time_seconds": ts_time,
                 "allocation": ts_solution.allocation,
                 "campaign_metrics": ts_solution.campaign_metrics
