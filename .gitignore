@@ -23,3 +23,6 @@ ENV/
 /venv
 /__pycache__
 /models
+*.pyc
+/src/models
+
