@@ -44,8 +44,44 @@ export interface OptimizationRequest {
   max_generations?: number;
   mutation_rate?: number;
   crossover_rate?: number;
-  risk_factor?: number; // Value between 0-2
+  risk_factor?: number;
   ga_verbose?: boolean;
+}
+
+export interface TabuSearchRequest {
+  campaigns: Campaign[];
+  ads: Ad[];
+  total_budget: number;
+  max_iterations?: number;
+  tabu_tenure?: number;
+  neighborhood_size?: number;
+  risk_factor?: number;
+  use_aspiration?: boolean;
+  intensification_threshold?: number;
+  diversification_threshold?: number;
+  ts_verbose?: boolean;
+}
+
+export interface ComparisonRequest {
+  campaigns: Campaign[];
+  ads: Ad[];
+  total_budget: number;
+  // GA params
+  population_size?: number;
+  max_generations?: number;
+  mutation_rate?: number;
+  crossover_rate?: number;
+  ga_verbose?: boolean;
+  // TS params
+  max_iterations?: number;
+  tabu_tenure?: number;
+  neighborhood_size?: number;
+  use_aspiration?: boolean;
+  intensification_threshold?: number;
+  diversification_threshold?: number;
+  ts_verbose?: boolean;
+  // Shared
+  risk_factor?: number;
 }
 
 // Response from GA optimization
@@ -69,10 +105,19 @@ export interface OptimizationResponse {
   fitness: number;
   total_roi: number;
   total_cost: number;
-  total_revenue: number;
+  total_revenue?: number; // Deprecated, use total_media_revenue
+  total_media_cost: number;
+  total_media_revenue: number;
   campaign_metrics: {
     [campaignId: string]: CampaignMetrics;
   };
+}
+
+export interface AlgorithmComparison {
+  ga_result: OptimizationResponse | null;
+  ts_result: OptimizationResponse | null;
+  comparison: Record<string, any>;
+  winner: string;
 }
 
 // Default values for forms (exclude _key and id as they're generated dynamically)
